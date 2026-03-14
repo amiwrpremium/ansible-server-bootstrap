@@ -1,0 +1,218 @@
+---
+# SSH
+
+- name: Ensure .ssh directory exists
+  ansible.builtin.file:
+    path: /root/.ssh
+    state: directory
+    mode: '0700'
+    owner: root
+    group: root
+
+- name: Add authorized SSH key
+  ansible.posix.authorized_key:
+    user: root
+    state: present
+    key: "{{ ssh_public_key }}"
+
+- name: Configure SSH daemon
+  ansible.builtin.template:
+    src: sshd_config.j2
+    dest: /etc/ssh/sshd_config
+    owner: root
+    group: root
+    mode: '0600'
+    validate: '/usr/sbin/sshd -t -f %s'
+  notify: Restart SSH
+
+- name: Create SSH banner
+  ansible.builtin.copy:
+    dest: /etc/ssh/banner
+    content: |
+      **************************************************************************
+      UNAUTHORIZED ACCESS PROHIBITED. All connections are monitored.
+      **************************************************************************
+    owner: root
+    group: root
+    mode: '0644'
+
+# UFW
+
+- name: Install UFW
+  ansible.builtin.apt:
+    name: ufw
+    state: present
+
+- name: Reset UFW
+  community.general.ufw:
+    state: reset
+
+- name: Set UFW default deny incoming
+  community.general.ufw:
+    direction: incoming
+    policy: deny
+
+- name: Set UFW default allow outgoing
+  community.general.ufw:
+    direction: outgoing
+    policy: allow
+
+- name: Rate limit SSH on custom port
+  community.general.ufw:
+    rule: limit
+    port: "{{ ssh_port }}"
+    proto: tcp
+
+- name: Enable UFW
+  community.general.ufw:
+    state: enabled
+
+# Fail2ban
+
+- name: Install fail2ban
+  ansible.builtin.apt:
+    name: fail2ban
+    state: present
+
+- name: Configure fail2ban
+  ansible.builtin.template:
+    src: jail.local.j2
+    dest: /etc/fail2ban/jail.local
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart fail2ban
+
+- name: Enable fail2ban
+  ansible.builtin.systemd:
+    name: fail2ban
+    state: started
+    enabled: true
+
+# Kernel hardening
+
+- name: Apply kernel security parameters
+  ansible.posix.sysctl:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+    state: present
+    sysctl_file: /etc/sysctl.d/99-security.conf
+    reload: true
+  loop:
+    - { name: 'net.ipv4.ip_forward', value: '1' }
+    - { name: 'net.ipv6.conf.all.forwarding', value: '0' }
+    - { name: 'net.ipv4.conf.all.accept_source_route', value: '0' }
+    - { name: 'net.ipv4.conf.default.accept_source_route', value: '0' }
+    - { name: 'net.ipv6.conf.all.accept_source_route', value: '0' }
+    - { name: 'net.ipv6.conf.default.accept_source_route', value: '0' }
+    - { name: 'net.ipv4.conf.all.accept_redirects', value: '0' }
+    - { name: 'net.ipv4.conf.default.accept_redirects', value: '0' }
+    - { name: 'net.ipv6.conf.all.accept_redirects', value: '0' }
+    - { name: 'net.ipv6.conf.default.accept_redirects', value: '0' }
+    - { name: 'net.ipv4.conf.all.send_redirects', value: '0' }
+    - { name: 'net.ipv4.conf.default.send_redirects', value: '0' }
+    - { name: 'net.ipv4.tcp_syncookies', value: '1' }
+    - { name: 'net.ipv4.conf.all.log_martians', value: '1' }
+    - { name: 'net.ipv4.conf.default.log_martians', value: '1' }
+    - { name: 'net.ipv4.icmp_echo_ignore_broadcasts', value: '1' }
+    - { name: 'net.ipv4.icmp_ignore_bogus_error_responses', value: '1' }
+    - { name: 'net.ipv4.conf.all.rp_filter', value: '1' }
+    - { name: 'net.ipv4.conf.default.rp_filter', value: '1' }
+    - { name: 'fs.suid_dumpable', value: '0' }
+    - { name: 'kernel.randomize_va_space', value: '2' }
+    - { name: 'kernel.dmesg_restrict', value: '1' }
+    - { name: 'kernel.kptr_restrict', value: '2' }
+    - { name: 'fs.protected_hardlinks', value: '1' }
+    - { name: 'fs.protected_symlinks', value: '1' }
+
+- name: Enable TCP BBR congestion control
+  ansible.posix.sysctl:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+    state: present
+    sysctl_file: /etc/sysctl.d/99-bbr.conf
+    reload: true
+  loop:
+    - { name: 'net.core.default_qdisc', value: 'fq' }
+    - { name: 'net.ipv4.tcp_congestion_control', value: 'bbr' }
+
+- name: Harden /dev/shm
+  ansible.posix.mount:
+    path: /dev/shm
+    src: tmpfs
+    fstype: tmpfs
+    opts: defaults,noexec,nosuid,nodev
+    state: mounted
+
+- name: Blacklist unused kernel modules
+  ansible.builtin.copy:
+    dest: /etc/modprobe.d/blacklist-unused.conf
+    content: |
+      blacklist cramfs
+      blacklist freevxfs
+      blacklist jffs2
+      blacklist hfs
+      blacklist hfsplus
+      blacklist udf
+      blacklist dccp
+      blacklist sctp
+      blacklist rds
+      blacklist tipc
+    mode: '0644'
+
+# Unattended upgrades
+
+- name: Install unattended-upgrades
+  ansible.builtin.apt:
+    name:
+      - unattended-upgrades
+      - apt-listchanges
+    state: present
+
+- name: Configure unattended-upgrades
+  ansible.builtin.template:
+    src: 50unattended-upgrades.j2
+    dest: /etc/apt/apt.conf.d/50unattended-upgrades
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Enable automatic updates
+  ansible.builtin.copy:
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+      APT::Periodic::Download-Upgradeable-Packages "1";
+      APT::Periodic::AutocleanInterval "7";
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Install needrestart
+  ansible.builtin.apt:
+    name: needrestart
+    state: present
+
+- name: Configure needrestart to automatic mode
+  ansible.builtin.lineinfile:
+    path: /etc/needrestart/needrestart.conf
+    regexp: '^\$nrconf\{restart\}'
+    line: "$nrconf{restart} = 'a';"
+
+- name: Lock root password
+  ansible.builtin.user:
+    name: root
+    password_lock: true
+
+# Reboot check
+
+- name: Check if reboot is required
+  ansible.builtin.stat:
+    path: /var/run/reboot-required
+  register: security_reboot_required
+
+- name: Warn if reboot is required
+  ansible.builtin.debug:
+    msg: "WARNING: A system reboot is required (likely due to a kernel update). Please schedule a reboot."
+  when: security_reboot_required.stat.exists

@@ -1,0 +1,59 @@
+Port {{ ssh_port }}
+AddressFamily any
+ListenAddress 0.0.0.0
+ListenAddress ::
+
+Protocol 2
+
+HostKey /etc/ssh/ssh_host_ed25519_key
+HostKey /etc/ssh/ssh_host_rsa_key
+
+KexAlgorithms curve25519-sha256,curve25519-sha256@libssh.org,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512
+Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
+MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,umac-128-etm@openssh.com
+
+LoginGraceTime 30
+PermitRootLogin prohibit-password
+StrictModes yes
+MaxAuthTries {{ ssh_max_auth_tries }}
+MaxSessions 10
+
+PubkeyAuthentication yes
+AuthorizedKeysFile .ssh/authorized_keys
+
+PasswordAuthentication no
+PermitEmptyPasswords no
+ChallengeResponseAuthentication no
+KbdInteractiveAuthentication no
+
+UsePAM yes
+
+HostbasedAuthentication no
+IgnoreRhosts yes
+IgnoreUserKnownHosts yes
+
+KerberosAuthentication no
+GSSAPIAuthentication no
+
+AllowAgentForwarding no
+AllowTcpForwarding no
+X11Forwarding no
+PermitTunnel no
+GatewayPorts no
+
+PrintMotd no
+PrintLastLog yes
+TCPKeepAlive yes
+PermitUserEnvironment no
+Compression no
+ClientAliveInterval 300
+ClientAliveCountMax 2
+UseDNS no
+MaxStartups 10:30:60
+
+Banner /etc/ssh/banner
+
+Subsystem sftp /usr/lib/openssh/sftp-server -f AUTHPRIV -l INFO
+
+SyslogFacility AUTH
+LogLevel VERBOSE
