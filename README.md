@@ -1,6 +1,7 @@
 # ansible-server-bootstrap
 
 [![Ansible Lint](https://github.com/amiwrpremium/ansible-server-bootstrap/actions/workflows/lint.yml/badge.svg)](https://github.com/amiwrpremium/ansible-server-bootstrap/actions/workflows/lint.yml)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/b06f39bab2b6443192dc03fde0ca53cc)](https://app.codacy.com/gh/amiwrpremium/ansible-server-bootstrap/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Ubuntu](https://img.shields.io/badge/Ubuntu-24.04+-orange.svg)](https://ubuntu.com/)
 [![Ansible](https://img.shields.io/badge/Ansible-2.16+-red.svg)](https://docs.ansible.com/)
