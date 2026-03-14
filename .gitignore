@@ -1,0 +1,23 @@
+*.retry
+.ansible/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+*.pem
+*.key
+secrets.yml
+vault.yml
+.vault_pass
+*.log
+
+# User config (use *.example files as templates)
+inventory/hosts.yml
+group_vars/all.yml

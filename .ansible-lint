@@ -1,0 +1,6 @@
+---
+skip_list:
+  - ignore-errors
+  - command-instead-of-shell
+  - no-changed-when
+  - risky-shell-pipe
