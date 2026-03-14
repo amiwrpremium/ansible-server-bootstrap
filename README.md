@@ -210,6 +210,7 @@ make bootstrap
 ```
 
 This runs the playbook with `--ask-pass` on port 22. It will:
+
 - Prompt you for the root password
 - Configure everything including changing SSH to port 2222
 - After this, password auth is disabled and SSH moves to port 2222
@@ -239,6 +240,7 @@ make create-user
 ```
 
 You will be prompted for:
+
 1. **Username** - the new user's login name
 2. **SSH public key** - the user's public key for authentication
 3. **Shell** - defaults to `/bin/bash`, can be changed to `/bin/zsh` etc.
@@ -327,7 +329,7 @@ Node exporter listens on `127.0.0.1:9100` by default (not exposed to the interne
 ssh -L 9100:localhost:9100 -p 2222 root@YOUR_SERVER_IP
 ```
 
-Then open http://localhost:9100/metrics in your browser.
+Then open <http://localhost:9100/metrics> in your browser.
 
 ### From a remote Prometheus server
 
