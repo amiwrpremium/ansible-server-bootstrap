@@ -1,0 +1,197 @@
+---
+- name: Set hostname
+  ansible.builtin.hostname:
+    name: "{{ hostname }}"
+
+- name: Update /etc/hosts
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: '^127\.0\.1\.1'
+    line: "127.0.1.1 {{ hostname }}"
+    state: present
+
+- name: Set timezone
+  community.general.timezone:
+    name: "{{ timezone }}"
+
+- name: Set locale
+  community.general.locale_gen:
+    name: "{{ system_locale }}"
+    state: present
+
+- name: Set default locale
+  ansible.builtin.copy:
+    dest: /etc/default/locale
+    content: |
+      LANG={{ system_locale }}
+      LC_ALL={{ system_locale }}
+    mode: '0644'
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Upgrade all packages
+  ansible.builtin.apt:
+    upgrade: dist
+    autoremove: true
+    autoclean: true
+
+- name: Install essential packages
+  ansible.builtin.apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - wget
+      - gnupg
+      - lsb-release
+      - software-properties-common
+      - htop
+      - tmux
+      - vim
+      - jq
+      - unzip
+      - ncdu
+      - tree
+      - net-tools
+      - dnsutils
+      - iotop
+      - sysstat
+      - logrotate
+    state: present
+
+- name: Create keyrings directory
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Configure systemd journal size limit
+  ansible.builtin.lineinfile:
+    path: /etc/systemd/journald.conf
+    regexp: '^#?SystemMaxUse='
+    line: 'SystemMaxUse=500M'
+  notify: Restart journald
+
+- name: Configure systemd journal file size limit
+  ansible.builtin.lineinfile:
+    path: /etc/systemd/journald.conf
+    regexp: '^#?SystemMaxFileSize='
+    line: 'SystemMaxFileSize=50M'
+  notify: Restart journald
+
+- name: Enable NTP sync
+  ansible.builtin.systemd:
+    name: systemd-timesyncd
+    state: started
+    enabled: true
+
+- name: Check if swap file exists
+  ansible.builtin.stat:
+    path: /swapfile
+  register: base_swap_file
+
+- name: Create swap file
+  ansible.builtin.command: fallocate -l {{ swap_size }} /swapfile
+  when: not base_swap_file.stat.exists
+  changed_when: true
+
+- name: Set swap file permissions
+  ansible.builtin.file:
+    path: /swapfile
+    mode: '0600'
+    owner: root
+    group: root
+  when: not base_swap_file.stat.exists
+
+- name: Format swap file
+  ansible.builtin.command: mkswap /swapfile
+  when: not base_swap_file.stat.exists
+  changed_when: true
+
+- name: Enable swap file
+  ansible.builtin.command: swapon /swapfile
+  when: not base_swap_file.stat.exists
+  changed_when: true
+
+- name: Add swap to fstab
+  ansible.builtin.lineinfile:
+    path: /etc/fstab
+    regexp: '^/swapfile'
+    line: '/swapfile none swap sw 0 0'
+    state: present
+
+- name: Set swappiness
+  ansible.posix.sysctl:
+    name: vm.swappiness
+    value: "{{ swap_swappiness }}"
+    state: present
+    reload: true
+
+- name: Disable noisy MOTD scripts
+  ansible.builtin.file:
+    path: "/etc/update-motd.d/{{ item }}"
+    mode: '0644'
+  loop:
+    - 10-help-text
+    - 50-motd-news
+    - 88-esm-announce
+    - 91-contract-ua-esm-status
+    - 91-release-upgrade
+  ignore_errors: true
+
+- name: Configure bash history
+  ansible.builtin.blockinfile:
+    path: /etc/bash.bashrc
+    marker: "# {mark} ANSIBLE MANAGED - BASH HISTORY"
+    block: |
+      HISTSIZE=10000
+      HISTFILESIZE=20000
+      HISTTIMEFORMAT="%F %T "
+      HISTCONTROL=ignoredups:erasedups
+      shopt -s histappend
+      PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND$'\n'}history -a"
+
+- name: Validate file descriptor limit
+  ansible.builtin.fail:
+    msg: "nofile_limit must be between 1024 and 1048576. Got: {{ nofile_limit }}"
+  when: nofile_limit | int < 1024 or nofile_limit | int > 1048576
+
+- name: Set file descriptor limits
+  ansible.builtin.copy:
+    dest: /etc/security/limits.d/99-nofile.conf
+    content: |
+      * soft nofile {{ nofile_limit }}
+      * hard nofile {{ nofile_limit }}
+      root soft nofile {{ nofile_limit }}
+      root hard nofile {{ nofile_limit }}
+    mode: '0644'
+
+- name: Set systemd default file descriptor limit
+  ansible.builtin.lineinfile:
+    path: /etc/systemd/system.conf
+    regexp: '^#?DefaultLimitNOFILE='
+    line: 'DefaultLimitNOFILE={{ nofile_limit }}'
+  notify: Reload systemd daemon
+
+- name: Remove snapd
+  ansible.builtin.apt:
+    name:
+      - snapd
+      - lxd-agent-loader
+    state: absent
+    purge: true
+  ignore_errors: true
+
+- name: Remove snap directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /snap
+    - /var/snap
+    - /var/lib/snapd
+    - /var/cache/snapd
+  ignore_errors: true
