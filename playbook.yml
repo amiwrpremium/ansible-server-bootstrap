@@ -1,0 +1,28 @@
+---
+- name: Server Bootstrap
+  hosts: all
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Validate Ubuntu version
+      ansible.builtin.fail:
+        msg: "This playbook requires Ubuntu 24.04 or later. Detected: {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }}"
+      when: ansible_facts['distribution'] != 'Ubuntu' or ansible_facts['distribution_version'] is version('24.04', '<')
+
+    - name: Validate SSH public key is configured
+      ansible.builtin.fail:
+        msg: "ssh_public_key is not configured. Set it in group_vars/all.yml or pass it with -e ssh_public_key='ssh-ed25519 ...'"
+      when: ssh_public_key == 'CHANGE_ME'
+
+    - name: Validate ansible_host is configured
+      ansible.builtin.fail:
+        msg: "ansible_host is not configured. Set the server IP in inventory/hosts.yml"
+      when: ansible_host == 'CHANGE_ME'
+
+  roles:
+    - { role: base, tags: ['base'] }
+    - { role: security, tags: ['security'] }
+    - { role: docker, tags: ['docker'] }
+    - { role: tools, tags: ['tools'] }
+    - { role: monitoring, tags: ['monitoring'] }

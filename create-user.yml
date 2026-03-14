@@ -1,0 +1,56 @@
+---
+- name: Create a new sudo user
+  hosts: all
+  become: true
+  gather_facts: false
+
+  vars_prompt:
+    - name: username
+      prompt: "Enter the username to create"
+      private: false
+
+    - name: user_ssh_public_key
+      prompt: "Enter the SSH public key for the user"
+      private: false
+
+    - name: user_shell
+      prompt: "Enter the shell (default: /bin/bash)"
+      default: "/bin/bash"
+      private: false
+
+  tasks:
+    - name: Validate username is provided
+      ansible.builtin.fail:
+        msg: "Username cannot be empty"
+      when: username | length == 0
+
+    - name: Validate SSH key is provided
+      ansible.builtin.fail:
+        msg: "SSH public key cannot be empty"
+      when: user_ssh_public_key | length == 0
+
+    - name: Create user
+      ansible.builtin.user:
+        name: "{{ username }}"
+        shell: "{{ user_shell }}"
+        groups: sudo
+        append: true
+        create_home: true
+        state: present
+
+    - name: Add SSH key for user
+      ansible.posix.authorized_key:
+        user: "{{ username }}"
+        state: present
+        key: "{{ user_ssh_public_key }}"
+
+    - name: Allow passwordless sudo
+      ansible.builtin.copy:
+        dest: "/etc/sudoers.d/{{ username }}"
+        content: "{{ username }} ALL=(ALL) NOPASSWD:ALL"
+        mode: '0440'
+        validate: '/usr/sbin/visudo -cf %s'
+
+    - name: Display created user info
+      ansible.builtin.debug:
+        msg: "User '{{ username }}' created with sudo access and SSH key authentication."
