@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+#
+# Conventional Commits validation hook
+# https://www.conventionalcommits.org/en/v1.0.0/
+#
+# Valid formats:
+#   type: description
+#   type(scope): description
+#   type!: description          (breaking change)
+#   type(scope)!: description   (breaking change)
+
+commit_msg_file="$1"
+commit_msg=$(head -1 "$commit_msg_file")
+
+# Allow merge commits
+if printf '%s\n' "$commit_msg" | grep -qE '^Merge '; then
+  exit 0
+fi
+
+# Allowed types
+types="feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert"
+
+# Conventional commit pattern
+pattern="^($types)(\([a-z0-9 _-]+\))?!?: .{1,}"
+
+if ! printf '%s\n' "$commit_msg" | grep -qE "$pattern"; then
+  echo ""
+  echo "ERROR: Commit message does not follow Conventional Commits format."
+  echo ""
+  echo "  Expected: <type>[optional scope]: <description>"
+  echo ""
+  echo "  Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert"
+  echo ""
+  echo "  Examples:"
+  echo "    feat: add swap file configuration"
+  echo "    fix(security): correct sysctl ip_forward value"
+  echo "    docs: update README with troubleshooting section"
+  echo "    feat!: drop Ubuntu 22.04 support"
+  echo ""
+  printf '  Your message: %s\n' "$commit_msg"
+  echo ""
+  exit 1
+fi
+
+# Check description is not empty after the colon
+description=$(printf '%s\n' "$commit_msg" | sed -E "s/^($types)(\([a-z0-9 _-]+\))?!?: //")
+if [ -z "$description" ]; then
+  echo ""
+  echo "ERROR: Commit description cannot be empty."
+  echo ""
+  exit 1
+fi
