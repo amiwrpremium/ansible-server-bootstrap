@@ -314,6 +314,7 @@ ansible-playbook playbook.yml -e "hostname=web-prod" -e "swap_size=2G" -e "ssh_p
 | `make check` | Run syntax check, lint, and dry-run |
 | `make ping` | Test connectivity to all hosts |
 | `make create-user` | Create a new sudo user (interactive) |
+| `make changelog` | Generate CHANGELOG.md from commit history |
 
 ## Node Exporter
 
@@ -365,10 +366,21 @@ ansible-playbook playbook.yml --limit web-1
 ├── create-user.yml             # Standalone playbook to create sudo users
 ├── Makefile                    # Convenience commands
 ├── requirements.yml            # Required Ansible Galaxy collections
+├── cliff.toml                  # git-cliff changelog configuration
+├── CHANGELOG.md                # Auto-generated changelog
+├── CONTRIBUTING.md             # Contribution guidelines
+├── LICENSE                     # MIT license
 ├── .ansible-lint               # Linter configuration
+├── .githooks/
+│   └── commit-msg              # Conventional commit validation hook
 ├── .github/
-│   └── workflows/
-│       └── lint.yml            # CI: runs ansible-lint on push/PR
+│   ├── workflows/
+│   │   ├── lint.yml            # CI: runs ansible-lint on push/PR
+│   │   └── release.yml         # CI: create release on semver tags
+│   ├── ISSUE_TEMPLATE/
+│   │   ├── bug_report.yml      # Bug report template
+│   │   └── feature_request.yml # Feature request template
+│   └── pull_request_template.md
 ├── inventory/
 │   ├── example.hosts.yml       # Example inventory (copy to hosts.yml)
 │   └── hosts.yml               # Your inventory (gitignored)
@@ -462,8 +474,19 @@ This runs the playbook in check mode with diff output, showing what would change
 
 A GitHub Actions workflow (`.github/workflows/lint.yml`) runs `ansible-lint` on every push and pull request to `master`. To run it locally:
 
+Install [ansible-lint](https://docs.ansible.com/projects/lint/installing/):
+
 ```bash
-pip install ansible-lint
+# macOS
+brew install ansible-lint
+
+# pip (any platform)
+pip3 install ansible-lint
+```
+
+Then run:
+
+```bash
 make lint
 ```
 
