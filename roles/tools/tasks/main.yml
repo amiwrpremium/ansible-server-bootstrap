@@ -1,0 +1,39 @@
+---
+- name: Install Git
+  ansible.builtin.apt:
+    name: git
+    state: present
+
+- name: Configure Git
+  ansible.builtin.copy:
+    dest: /root/.gitconfig
+    content: |
+      [init]
+          defaultBranch = master
+      [core]
+          editor = vim
+      [pull]
+          rebase = false
+    mode: '0644'
+
+- name: Download GitHub CLI GPG key
+  ansible.builtin.get_url:
+    url: https://cli.github.com/packages/githubcli-archive-keyring.gpg
+    dest: /etc/apt/keyrings/githubcli-archive-keyring.gpg
+    mode: '0644'
+
+- name: Add GitHub CLI repository
+  ansible.builtin.apt_repository:
+    # yamllint disable-line rule:line-length
+    repo: >-
+      deb [arch={{ ansible_facts['architecture'] | regex_replace('x86_64', 'amd64') }}
+      signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg]
+      https://cli.github.com/packages stable main
+    filename: github-cli
+    state: present
+
+- name: Install GitHub CLI
+  ansible.builtin.apt:
+    name: gh
+    state: present
+    update_cache: true
