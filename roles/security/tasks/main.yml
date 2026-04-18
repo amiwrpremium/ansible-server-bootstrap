@@ -254,3 +254,18 @@
     msg: "WARNING: A system reboot is required (likely due to a kernel update). Please schedule a reboot."
   when: security_reboot_required.stat.exists
   tags: [reboot]
+
+# SSH reachability verification
+
+- name: Flush handlers so SSH restart completes before verification
+  ansible.builtin.meta: flush_handlers
+
+- name: Verify SSH is reachable on the configured port
+  ansible.builtin.wait_for:
+    host: "{{ ansible_host }}"
+    port: "{{ ssh_port }}"
+    state: started
+    timeout: 60
+    delay: 5
+  delegate_to: localhost
+  tags: [ssh]
