@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Bug Fixes
 
+- **ci:** Suppress line-length on create-user.yml regex when-clause ([f4febbc](https://github.com/amiwrpremium/ansible-server-bootstrap/commit/f4febbc0d42591452de8c6bdb9385596cdbfb6ac))
 - **ci:** Unbreak yamllint on inline-dict braces and long URL ([bd4fd00](https://github.com/amiwrpremium/ansible-server-bootstrap/commit/bd4fd00301b366966c674eb3291752d7450561a6))
 - Validate shipped placeholders trip the pre_task guards ([7f4b444](https://github.com/amiwrpremium/ansible-server-bootstrap/commit/7f4b4445edae598487a797a3a18c44c8853df16b))
 - **base:** Detect chrony to avoid systemd-timesyncd conflict ([b04364a](https://github.com/amiwrpremium/ansible-server-bootstrap/commit/b04364af3c588ef11b8a4986dc06c199fed64337))
@@ -42,6 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### CI/CD
 
+- Regenerate CHANGELOG.md ([ffb4e5e](https://github.com/amiwrpremium/ansible-server-bootstrap/commit/ffb4e5eeb45f372ccbd5a5bbc3bbad93ff33a66e))
 - Regenerate CHANGELOG.md ([c59a029](https://github.com/amiwrpremium/ansible-server-bootstrap/commit/c59a02974f464def61b85f3d54ae29b597f9d10a))
 - Enforce Conventional Commits on pull requests ([e480525](https://github.com/amiwrpremium/ansible-server-bootstrap/commit/e4805253daa898d6506f84280427a91fa7338bfe))
 - Extend release workflow gates to every playbook ([661a2d1](https://github.com/amiwrpremium/ansible-server-bootstrap/commit/661a2d104d84427908181f68b37c621afeb849cd))
