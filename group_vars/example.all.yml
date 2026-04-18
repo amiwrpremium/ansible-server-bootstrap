@@ -23,6 +23,10 @@ ssh_allow_groups:
 fail2ban_bantime: 3600
 fail2ban_findtime: 600
 fail2ban_maxretry: 3
+fail2ban_recidive_enabled: true
+fail2ban_recidive_bantime: 604800   # 1 week
+fail2ban_recidive_findtime: 86400   # 1 day
+fail2ban_recidive_maxretry: 5
 
 # Node Exporter
 node_exporter_version: "1.11.1"

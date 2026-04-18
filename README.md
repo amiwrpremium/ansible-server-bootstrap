@@ -68,6 +68,7 @@ This software is provided "as is", without warranty of any kind. Use at your own
   - Rate-limited SSH on the configured port (complements fail2ban)
 - **Fail2ban**:
   - SSH jail enabled with configurable ban time (default: 1 hour), find time (10 min), and max retries (3)
+  - Recidive jail enabled by default: escalates to a 1-week ban after 5 bans within 24 hours
   - Uses UFW as the ban action
 - **Kernel hardening** (25 sysctl parameters):
   - IP forwarding enabled (required for Docker)
@@ -332,6 +333,10 @@ All variables are in `group_vars/all.yml`. Every variable has a sensible default
 | `fail2ban_bantime` | `3600` | Ban duration in seconds (1 hour) |
 | `fail2ban_findtime` | `600` | Time window for counting failures (10 min) |
 | `fail2ban_maxretry` | `3` | Max failures before ban |
+| `fail2ban_recidive_enabled` | `true` | Enable the `[recidive]` jail that escalates bans for repeat offenders |
+| `fail2ban_recidive_bantime` | `604800` | Recidive ban duration in seconds (1 week) |
+| `fail2ban_recidive_findtime` | `86400` | Recidive lookback window in seconds (1 day) |
+| `fail2ban_recidive_maxretry` | `5` | Previous bans within `findtime` that trigger recidive escalation |
 | `node_exporter_version` | `1.11.1` | Prometheus node_exporter version |
 | `node_exporter_listen_address` | `127.0.0.1:9100` | node_exporter listen address |
 | `unattended_upgrades_mail` | `""` | Email for upgrade notifications (empty = disabled) |

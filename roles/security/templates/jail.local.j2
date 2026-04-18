@@ -13,3 +13,12 @@ logpath = /var/log/auth.log
 maxretry = {{ fail2ban_maxretry }}
 bantime = {{ fail2ban_bantime }}
 findtime = {{ fail2ban_findtime }}
+{% if fail2ban_recidive_enabled %}
+
+[recidive]
+enabled = true
+logpath = /var/log/fail2ban.log
+bantime = {{ fail2ban_recidive_bantime }}
+findtime = {{ fail2ban_recidive_findtime }}
+maxretry = {{ fail2ban_recidive_maxretry }}
+{% endif %}
