@@ -1,5 +1,5 @@
 ---
-name: Ansible Lint
+name: Lint
 
 on:
   push:
@@ -9,15 +9,28 @@ on:
 
 jobs:
   lint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Install ansible-lint
-        run: pip install ansible-lint
+      - name: Install ansible-lint and yamllint
+        run: pip install ansible-lint yamllint
 
       - name: Install Ansible collections
         run: ansible-galaxy collection install -r requirements.yml
 
+      - name: Run yamllint
+        run: yamllint .
+
       - name: Run ansible-lint
-        run: ansible-lint playbook.yml create-user.yml
+        run: ansible-lint playbook.yml create-user.yml healthcheck.yml rollback.yml
+
+      - name: Run syntax check on playbooks
+        run: |
+          ansible-playbook playbook.yml --syntax-check
+          ansible-playbook create-user.yml --syntax-check
+          ansible-playbook healthcheck.yml --syntax-check
+          ansible-playbook rollback.yml --syntax-check
+
+      - name: Shellcheck commit-msg hook
+        run: shellcheck .githooks/commit-msg
