@@ -100,7 +100,7 @@ This software is provided "as is", without warranty of any kind. Use at your own
 
 ### Monitoring (`roles/monitoring`)
 
-- Installs Prometheus node_exporter v1.10.2 (configurable)
+- Installs Prometheus node_exporter v1.11.1 (configurable)
 - Runs as a dedicated `node_exporter` system user
 - Listens on `127.0.0.1:9100` (localhost only, not exposed to the internet)
 - Enables systemd and process collectors
@@ -285,7 +285,7 @@ All variables are in `group_vars/all.yml`. Every variable has a sensible default
 | `fail2ban_bantime` | `3600` | Ban duration in seconds (1 hour) |
 | `fail2ban_findtime` | `600` | Time window for counting failures (10 min) |
 | `fail2ban_maxretry` | `3` | Max failures before ban |
-| `node_exporter_version` | `1.10.2` | Prometheus node_exporter version |
+| `node_exporter_version` | `1.11.1` | Prometheus node_exporter version |
 | `node_exporter_listen_address` | `127.0.0.1:9100` | node_exporter listen address |
 | `unattended_upgrades_mail` | `""` | Email for upgrade notifications (empty = disabled) |
 | `unattended_upgrades_auto_reboot` | `false` | Auto-reboot after kernel updates |
