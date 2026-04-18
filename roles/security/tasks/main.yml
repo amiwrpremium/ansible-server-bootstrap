@@ -43,10 +43,6 @@
     name: ufw
     state: present
 
-- name: Reset UFW
-  community.general.ufw:
-    state: reset
-
 - name: Set UFW default deny incoming
   community.general.ufw:
     direction: incoming

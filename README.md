@@ -463,6 +463,14 @@ ssh -p 2222 root@YOUR_SERVER_IP 'reboot'
 
 This playbook only supports Ubuntu 24.04 and later. It validates the OS version before running and will fail with a clear error message on unsupported systems.
 
+### Changed `ssh_port` leaves an orphaned UFW rule
+
+If you change `ssh_port` after the first run (e.g., from `2222` to `2200`), the playbook adds the new rate-limit rule but does not remove the old one. Delete it manually:
+
+```bash
+ssh -p <new_port> root@YOUR_SERVER_IP 'ufw delete limit <old_port>/tcp'
+```
+
 ### Testing changes before applying
 
 Always preview changes first with:
