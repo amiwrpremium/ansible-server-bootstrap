@@ -2,6 +2,10 @@
 
 Thanks for considering contributing to ansible-server-bootstrap.
 
+## Code of Conduct
+
+This project adheres to the [Contributor Covenant](https://www.contributor-covenant.org/) code of conduct. By participating — opening issues, submitting PRs, commenting, or otherwise interacting with the project — you agree to uphold it. Read the full text in [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+
 ## Getting Started
 
 1. Fork the repository
