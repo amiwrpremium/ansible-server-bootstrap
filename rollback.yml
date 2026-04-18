@@ -7,14 +7,14 @@
   tasks:
     # SSH — /etc/ssh/sshd_config
 
-    - name: SSH — find sshd_config backups
+    - name: Find sshd_config backups
       ansible.builtin.find:
         paths: /etc/ssh
         patterns: 'sshd_config.*~'
       register: rb_sshd_backups
       tags: [ssh]
 
-    - name: SSH — restore latest sshd_config backup
+    - name: Restore latest sshd_config backup
       ansible.builtin.copy:
         src: "{{ (rb_sshd_backups.files | sort(attribute='mtime') | last).path }}"
         dest: /etc/ssh/sshd_config
@@ -27,7 +27,7 @@
       notify: Restart SSH
       tags: [ssh]
 
-    - name: SSH — report when no sshd_config backup present
+    - name: Report when no sshd_config backup is present
       ansible.builtin.debug:
         msg: "No backup found for /etc/ssh/sshd_config, skipping."
       when: rb_sshd_backups.files | length == 0
@@ -35,14 +35,14 @@
 
     # fail2ban — /etc/fail2ban/jail.local
 
-    - name: fail2ban — find jail.local backups
+    - name: Find jail.local backups
       ansible.builtin.find:
         paths: /etc/fail2ban
         patterns: 'jail.local.*~'
       register: rb_fail2ban_backups
       tags: [fail2ban]
 
-    - name: fail2ban — restore latest jail.local backup
+    - name: Restore latest jail.local backup
       ansible.builtin.copy:
         src: "{{ (rb_fail2ban_backups.files | sort(attribute='mtime') | last).path }}"
         dest: /etc/fail2ban/jail.local
@@ -54,7 +54,7 @@
       notify: Restart fail2ban
       tags: [fail2ban]
 
-    - name: fail2ban — report when no jail.local backup present
+    - name: Report when no jail.local backup is present
       ansible.builtin.debug:
         msg: "No backup found for /etc/fail2ban/jail.local, skipping."
       when: rb_fail2ban_backups.files | length == 0
@@ -62,14 +62,14 @@
 
     # Docker — /etc/docker/daemon.json
 
-    - name: Docker — find daemon.json backups
+    - name: Find daemon.json backups
       ansible.builtin.find:
         paths: /etc/docker
         patterns: 'daemon.json.*~'
       register: rb_docker_backups
       tags: [docker]
 
-    - name: Docker — restore latest daemon.json backup
+    - name: Restore latest daemon.json backup
       ansible.builtin.copy:
         src: "{{ (rb_docker_backups.files | sort(attribute='mtime') | last).path }}"
         dest: /etc/docker/daemon.json
@@ -81,7 +81,7 @@
       notify: Restart Docker
       tags: [docker]
 
-    - name: Docker — report when no daemon.json backup present
+    - name: Report when no daemon.json backup is present
       ansible.builtin.debug:
         msg: "No backup found for /etc/docker/daemon.json, skipping."
       when: rb_docker_backups.files | length == 0
@@ -89,14 +89,14 @@
 
     # fstab — /etc/fstab
 
-    - name: fstab — find fstab backups
+    - name: Find fstab backups
       ansible.builtin.find:
         paths: /etc
         patterns: 'fstab.*~'
       register: rb_fstab_backups
       tags: [base]
 
-    - name: fstab — restore latest fstab backup
+    - name: Restore latest fstab backup
       ansible.builtin.copy:
         src: "{{ (rb_fstab_backups.files | sort(attribute='mtime') | last).path }}"
         dest: /etc/fstab
@@ -107,7 +107,7 @@
       when: rb_fstab_backups.files | length > 0
       tags: [base]
 
-    - name: fstab — report when no fstab backup present
+    - name: Report when no fstab backup is present
       ansible.builtin.debug:
         msg: "No backup found for /etc/fstab, skipping. (Run `mount -a` manually after rollback if needed.)"
       when: rb_fstab_backups.files | length == 0

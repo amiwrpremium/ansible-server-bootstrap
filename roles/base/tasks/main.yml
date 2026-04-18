@@ -109,7 +109,7 @@
   retries: 3
   delay: 5
 
-- name: Re-gather service facts after potential install
+- name: Re-gather service facts after potential install  # noqa: no-handler
   ansible.builtin.service_facts:
   when: base_timesyncd_install is changed
 
