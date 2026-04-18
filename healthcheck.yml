@@ -1,0 +1,148 @@
+---
+- name: Health check
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Gather service facts
+      ansible.builtin.service_facts:
+
+    # SSH
+
+    - name: Verify sshd unit is active
+      ansible.builtin.assert:
+        that: ansible_facts.services['ssh.service'].state == 'running'
+        fail_msg: "sshd is not running"
+      tags: [ssh]
+
+    - name: Check listening ports
+      ansible.builtin.command: ss -tlnH
+      register: hc_listening
+      changed_when: false
+      tags: [ssh]
+
+    - name: Assert sshd is listening on configured port
+      ansible.builtin.assert:
+        that: hc_listening.stdout is search(':' + ssh_port | string + '\\b')
+        fail_msg: "sshd not listening on port {{ ssh_port }}"
+      tags: [ssh]
+
+    - name: Read root authorized_keys
+      ansible.builtin.slurp:
+        src: /root/.ssh/authorized_keys
+      register: hc_authorized_keys
+      tags: [ssh]
+
+    - name: Assert every configured key is authorized
+      ansible.builtin.assert:
+        that: item in (hc_authorized_keys.content | b64decode)
+        fail_msg: "Missing authorized key: {{ item[:40] }}..."
+      loop: "{{ ssh_public_keys }}"
+      tags: [ssh]
+
+    # UFW
+
+    - name: Check UFW status
+      ansible.builtin.command: ufw status verbose
+      register: hc_ufw
+      changed_when: false
+      tags: [firewall]
+
+    - name: Assert UFW is active
+      ansible.builtin.assert:
+        that: "'Status: active' in hc_ufw.stdout"
+        fail_msg: "UFW is not active"
+      tags: [firewall]
+
+    # Fail2ban
+
+    - name: Assert fail2ban is running
+      ansible.builtin.assert:
+        that: ansible_facts.services['fail2ban.service'].state == 'running'
+        fail_msg: "fail2ban is not running"
+      tags: [fail2ban]
+
+    # Time sync (chrony OR systemd-timesyncd)
+
+    - name: Assert a time sync service is running
+      ansible.builtin.assert:
+        that: >
+          (ansible_facts.services['chrony.service'] is defined
+           and ansible_facts.services['chrony.service'].state == 'running')
+          or (ansible_facts.services['systemd-timesyncd.service'] is defined
+              and ansible_facts.services['systemd-timesyncd.service'].state == 'running')
+        fail_msg: "Neither chrony nor systemd-timesyncd is running"
+      tags: [base]
+
+    # Swap
+
+    - name: Verify swap is active
+      ansible.builtin.command: swapon --show --noheadings
+      register: hc_swap
+      changed_when: false
+      tags: [base]
+
+    - name: Assert swap is present
+      ansible.builtin.assert:
+        that: hc_swap.stdout | length > 0
+        fail_msg: "No active swap"
+      tags: [base]
+
+    # Kernel hardening spot-checks
+
+    - name: Read randomize_va_space
+      ansible.builtin.slurp:
+        src: /proc/sys/kernel/randomize_va_space
+      register: hc_aslr
+      tags: [kernel]
+
+    - name: Assert ASLR is fully enabled (2)
+      ansible.builtin.assert:
+        that: (hc_aslr.content | b64decode | trim) == '2'
+        fail_msg: "kernel.randomize_va_space is not 2"
+      tags: [kernel]
+
+    - name: Read tcp_congestion_control
+      ansible.builtin.slurp:
+        src: /proc/sys/net/ipv4/tcp_congestion_control
+      register: hc_cc
+      tags: [kernel]
+
+    - name: Assert TCP BBR is active
+      ansible.builtin.assert:
+        that: (hc_cc.content | b64decode | trim) == 'bbr'
+        fail_msg: "TCP congestion control is not bbr"
+      tags: [kernel]
+
+    # Docker (only if installed)
+
+    - name: Assert docker is running (if installed)
+      ansible.builtin.assert:
+        that: ansible_facts.services['docker.service'].state == 'running'
+        fail_msg: "docker is installed but not running"
+      when: "'docker.service' in ansible_facts.services"
+      tags: [docker]
+
+    # Node exporter (only if installed)
+
+    - name: Assert node_exporter is running (if installed)
+      ansible.builtin.assert:
+        that: ansible_facts.services['node_exporter.service'].state == 'running'
+        fail_msg: "node_exporter is installed but not running"
+      when: "'node_exporter.service' in ansible_facts.services"
+      tags: [monitoring]
+
+    # Reboot pending (warn only)
+
+    - name: Check if reboot is required
+      ansible.builtin.stat:
+        path: /var/run/reboot-required
+      register: hc_reboot
+      tags: [updates]
+
+    - name: Warn if reboot is required
+      ansible.builtin.debug:
+        msg: "WARNING: a system reboot is pending (likely due to a kernel update)."
+      when: hc_reboot.stat.exists
+      tags: [updates]

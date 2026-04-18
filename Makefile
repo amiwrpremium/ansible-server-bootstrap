@@ -1,4 +1,4 @@
-.PHONY: install bootstrap run check syntax ping dry-run lint create-user base security docker tools monitoring changelog audit
+.PHONY: install bootstrap run check syntax ping dry-run lint create-user base security docker tools monitoring changelog audit healthcheck
 
 install:
 	git config core.hooksPath .githooks
@@ -50,3 +50,6 @@ changelog:
 
 audit:
 	ansible all -b -a "lynis audit system --quick --no-colors"
+
+healthcheck:
+	ansible-playbook healthcheck.yml

@@ -380,6 +380,7 @@ ansible-playbook playbook.yml -e "hostname=web-prod" -e "swap_size=2G" -e "ssh_p
 | `make create-user` | Create a new sudo user (interactive) |
 | `make changelog` | Generate CHANGELOG.md from commit history |
 | `make audit` | Run a Lynis security audit and show the hardening score |
+| `make healthcheck` | Verify the server is in the expected state (read-only) |
 
 ### Targeting subsystems inside the security role
 
@@ -402,6 +403,24 @@ ansible-playbook playbook.yml --tags kernel
 ```
 
 `--tags security` still runs the entire security role (every task carries both the role tag and its subsystem tag). Use `ansible-playbook playbook.yml --list-tags` to see all available tags.
+
+## Health Check
+
+`make healthcheck` runs `healthcheck.yml`, a read-only playbook that verifies a bootstrapped server is still in the expected state. It asserts:
+
+- sshd is running and listening on the configured port
+- Every key in `ssh_public_keys` is present in root's `authorized_keys`
+- UFW is active, fail2ban is running
+- A time-sync service is running (chrony or systemd-timesyncd)
+- Swap is active, ASLR is fully enabled, TCP BBR is the active congestion control
+- Docker and node_exporter are running (if installed)
+- Warns if a reboot is pending
+
+The playbook never mutates state — it only reports. Run it periodically, after a playbook run, or when you suspect drift. Use `--tags` (`ssh`, `firewall`, `fail2ban`, `kernel`, `base`, `docker`, `monitoring`, `updates`) to check one subsystem at a time:
+
+```bash
+ansible-playbook healthcheck.yml --tags ssh
+```
 
 ## Remote Syslog
 
