@@ -18,6 +18,10 @@ StrictModes yes
 MaxAuthTries {{ ssh_max_auth_tries }}
 MaxSessions 10
 
+{% if ssh_allow_groups %}
+AllowGroups {{ ssh_allow_groups | join(' ') }}
+
+{% endif %}
 PubkeyAuthentication yes
 AuthorizedKeysFile .ssh/authorized_keys
 

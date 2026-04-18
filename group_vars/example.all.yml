@@ -17,6 +17,9 @@ swap_swappiness: "10"
 
 # Security
 ssh_max_auth_tries: 3
+ssh_allow_groups:
+  - sudo
+  - root
 fail2ban_bantime: 3600
 fail2ban_findtime: 600
 fail2ban_maxretry: 3

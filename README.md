@@ -62,6 +62,7 @@ This software is provided "as is", without warranty of any kind. Use at your own
   - Client alive interval: 300 seconds, max 2 missed keepalives
   - Adds an unauthorized access warning banner
   - Locks the root password (key-only access)
+  - Restricts SSH login to members of `sudo` or `root` groups via `AllowGroups`
 - **UFW firewall**:
   - Default deny incoming, allow outgoing
   - Rate-limited SSH on the configured port (complements fail2ban)
@@ -327,6 +328,7 @@ All variables are in `group_vars/all.yml`. Every variable has a sensible default
 | `swap_size` | `1G` | Swap file size |
 | `swap_swappiness` | `10` | Swap aggressiveness (0-100, lower = less swap) |
 | `ssh_max_auth_tries` | `3` | Max SSH authentication attempts |
+| `ssh_allow_groups` | `["sudo", "root"]` | Groups allowed to SSH in. Empty list disables the restriction. |
 | `fail2ban_bantime` | `3600` | Ban duration in seconds (1 hour) |
 | `fail2ban_findtime` | `600` | Time window for counting failures (10 min) |
 | `fail2ban_maxretry` | `3` | Max failures before ban |
