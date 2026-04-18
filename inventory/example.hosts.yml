@@ -6,22 +6,24 @@ all:
       ansible_ssh_private_key_file: ~/.ssh/id_ed25519
       ansible_port: 2222
 
-# Multiple servers example:
+# Multi-role example (uncomment and adapt):
 #
 # all:
-#   hosts:
-#     web-1:
-#       ansible_host: "203.0.113.50"
-#       ansible_user: root
-#       ansible_ssh_private_key_file: ~/.ssh/id_ed25519
-#       ansible_port: 2222
-#     web-2:
-#       ansible_host: "203.0.113.51"
-#       ansible_user: root
-#       ansible_ssh_private_key_file: ~/.ssh/id_ed25519
-#       ansible_port: 2222
-#     db-1:
-#       ansible_host: "203.0.113.52"
-#       ansible_user: root
-#       ansible_ssh_private_key_file: ~/.ssh/id_ed25519
-#       ansible_port: 2222
+#   children:
+#     web:
+#       hosts:
+#         web-1:
+#           ansible_host: "203.0.113.50"
+#           ansible_user: root
+#           ansible_ssh_private_key_file: ~/.ssh/id_ed25519
+#           ansible_port: 2222
+#     db:
+#       hosts:
+#         db-1:
+#           ansible_host: "203.0.113.51"
+#           ansible_user: root
+#           ansible_ssh_private_key_file: ~/.ssh/id_ed25519
+#           ansible_port: 2222
+#
+# Per-group overrides live in group_vars/<group>.yml (e.g., group_vars/web.yml
+# for the `web` group). See group_vars/example.web.yml for a starting point.

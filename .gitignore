@@ -20,4 +20,5 @@ vault.yml
 
 # User config (use *.example files as templates)
 inventory/hosts.yml
-group_vars/all.yml
+group_vars/*.yml
+!group_vars/example.*.yml

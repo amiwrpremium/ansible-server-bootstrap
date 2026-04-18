@@ -484,6 +484,65 @@ You can target a specific host:
 ansible-playbook playbook.yml --limit web-1
 ```
 
+## Multi-role Inventories
+
+When your fleet has hosts with different jobs (web servers, DB servers, monitoring), organize them into groups and apply per-group overrides via `group_vars/<group>.yml`.
+
+### Example
+
+`inventory/hosts.yml`:
+
+```yaml
+all:
+  children:
+    web:
+      hosts:
+        web-1:
+          ansible_host: "203.0.113.50"
+          ansible_user: root
+          ansible_ssh_private_key_file: ~/.ssh/id_ed25519
+          ansible_port: 2222
+    db:
+      hosts:
+        db-1:
+          ansible_host: "203.0.113.51"
+          ansible_user: root
+          ansible_ssh_private_key_file: ~/.ssh/id_ed25519
+          ansible_port: 2222
+```
+
+`group_vars/web.yml` (per-group override — copy from `group_vars/example.web.yml`):
+
+```yaml
+ufw_allow_ports:
+  - { port: 80, proto: tcp }
+  - { port: 443, proto: tcp }
+```
+
+Variables resolve in precedence order: `group_vars/all.yml` (global) → `group_vars/<group>.yml` (per-group) → `host_vars/<host>.yml` (per-host) → `-e` extra-vars. Per-group values override global.
+
+### Targeting
+
+Run everything against the whole fleet:
+
+```bash
+ansible-playbook playbook.yml
+```
+
+Target just one group:
+
+```bash
+ansible-playbook playbook.yml --limit web
+```
+
+### Gitignore
+
+Any file you create as `group_vars/<anything>.yml` is gitignored automatically (so custom group_vars with IPs/keys never commit). The only tracked group_vars files are the shipped `group_vars/example.*.yml` references.
+
+### Known limit: `ufw_allow_ports` is additive
+
+UFW rules added via `ufw_allow_ports` stay in place if you remove them from the list. To revoke, delete the rule manually on the target: `ufw delete allow 80/tcp`.
+
 ## Project Structure
 
 ```

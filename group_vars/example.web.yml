@@ -1,0 +1,6 @@
+---
+# Example per-group override: web servers get HTTP/HTTPS open.
+# Applied by renaming to group_vars/web.yml and adding a `web` group to your inventory.
+ufw_allow_ports:
+  - { port: 80, proto: tcp }
+  - { port: 443, proto: tcp }
