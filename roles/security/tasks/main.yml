@@ -242,6 +242,18 @@
     password_lock: true
   tags: [ssh]
 
+# Audit tooling
+
+- name: Install Lynis
+  ansible.builtin.apt:
+    name: lynis
+    state: present
+  register: security_lynis_install
+  until: security_lynis_install is succeeded
+  retries: 3
+  delay: 5
+  tags: [audit]
+
 # Reboot check
 
 - name: Check if reboot is required

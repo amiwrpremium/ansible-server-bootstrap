@@ -1,4 +1,4 @@
-.PHONY: install bootstrap run check syntax ping dry-run lint create-user base security docker tools monitoring changelog
+.PHONY: install bootstrap run check syntax ping dry-run lint create-user base security docker tools monitoring changelog audit
 
 install:
 	git config core.hooksPath .githooks
@@ -47,3 +47,6 @@ monitoring:
 
 changelog:
 	git-cliff --output CHANGELOG.md
+
+audit:
+	ansible all -b -a "lynis audit system --quick --no-colors"

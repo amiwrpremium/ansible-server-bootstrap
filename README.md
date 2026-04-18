@@ -85,6 +85,7 @@ This software is provided "as is", without warranty of any kind. Use at your own
 - **Unattended upgrades**: Daily security and standard updates, auto-removes unused kernels and dependencies, configurable email notifications and auto-reboot
 - **Needrestart**: Automatically restarts services after package updates
 - **Reboot check**: Warns at the end of each run if a reboot is pending (e.g., after kernel updates)
+- **Lynis**: Installs [Lynis](https://cisofy.com/lynis/) for on-demand security auditing (run via `make audit`)
 
 ### Docker (`roles/docker`)
 
@@ -370,6 +371,7 @@ ansible-playbook playbook.yml -e "hostname=web-prod" -e "swap_size=2G" -e "ssh_p
 | `make ping` | Test connectivity to all hosts |
 | `make create-user` | Create a new sudo user (interactive) |
 | `make changelog` | Generate CHANGELOG.md from commit history |
+| `make audit` | Run a Lynis security audit and show the hardening score |
 
 ### Targeting subsystems inside the security role
 
@@ -392,6 +394,18 @@ ansible-playbook playbook.yml --tags kernel
 ```
 
 `--tags security` still runs the entire security role (every task carries both the role tag and its subsystem tag). Use `ansible-playbook playbook.yml --list-tags` to see all available tags.
+
+## Security Audit
+
+`make audit` runs [Lynis](https://cisofy.com/lynis/) against the target(s) and streams the output. The report ends with a **Hardening index** (0-100), a list of **Warnings** (things to fix) and **Suggestions** (potential improvements).
+
+```bash
+make audit
+```
+
+Lynis complements this playbook — it flags gaps we don't address (PAM hardening, auditd rules, banner wording, package integrity, etc.) and gives a measurable score you can trend over time.
+
+The full log lives at `/var/log/lynis.log` on the target, with a machine-readable report at `/var/log/lynis-report.dat`. To scan only a specific test group (e.g., malware, authentication), SSH in and run `lynis audit system --tests-from-group authentication`.
 
 ## Node Exporter
 
