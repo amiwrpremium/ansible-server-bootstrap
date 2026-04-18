@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   release:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -24,10 +24,14 @@ jobs:
         run: ansible-galaxy collection install -r requirements.yml
 
       - name: Run ansible-lint
-        run: ansible-lint playbook.yml create-user.yml
+        run: ansible-lint playbook.yml create-user.yml healthcheck.yml rollback.yml
 
       - name: Run syntax check
-        run: ansible-playbook playbook.yml --syntax-check
+        run: |
+          ansible-playbook playbook.yml --syntax-check
+          ansible-playbook create-user.yml --syntax-check
+          ansible-playbook healthcheck.yml --syntax-check
+          ansible-playbook rollback.yml --syntax-check
 
       - name: Generate changelog
         id: changelog
