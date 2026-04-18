@@ -35,6 +35,41 @@ make create-user
 
 This software is provided "as is", without warranty of any kind. Use at your own risk. The author is not responsible for any damages, data loss, security breaches, or other issues that may arise from using this software.
 
+## Threat Model
+
+This playbook hardens an Ubuntu 24.04+ VPS against common, opportunistic attack vectors. Know what it does and doesn't cover before you rely on it.
+
+It operates on a key-only access model — user accounts are password-locked, sudo is NOPASSWD, and no password is ever checked for SSH or privilege escalation. PAM password policies are therefore not configured; if you add password-based access later, reconsider the threat posture and enable PAM pwquality yourself.
+
+**It helps against:**
+
+- Automated SSH brute-force attempts (port 2222, key-only auth, fail2ban + recidive escalation)
+- Basic port/service scanning (UFW default deny-in, limited allowed ports)
+- Script-kiddie probing for default credentials and known misconfigurations
+- Unpatched CVEs in system packages (unattended-upgrades runs daily)
+- Common kernel-level exploit primitives (ASLR, rp_filter, module blacklist, `/dev/shm` hardening, disabled core dumps for SUID)
+- Log tampering after compromise (when `remote_syslog_host` is configured — logs are pushed off-host)
+
+**It does not protect against:**
+
+- Targeted attacks by a capable adversary
+- Insider threats — anyone in `ssh_public_keys` has full root
+- Physical access to the server (console, disk extraction, cold boot)
+- Supply-chain compromise (malicious Ansible collection, apt repo, or GitHub Action pinned here)
+- Zero-day exploits in installed services (SSH, Docker, node_exporter, etc.)
+- Compromise of the Ansible control machine — the operator's laptop holds the private key
+- Application-level vulnerabilities in anything you deploy *on top* (web apps, Docker workloads, custom daemons)
+- Data-at-rest encryption — no full-disk encryption is configured
+
+**What's still on you:**
+
+- Use ed25519 (or stronger) SSH keys and protect your private key
+- Keep your control machine patched
+- Back up your data — this playbook does not handle backups
+- Review `make audit` output periodically and act on the findings
+- Monitor your logs (remote forwarding only helps if someone reads them)
+- Rotate admin keys when team members leave
+
 ## What This Does
 
 ### Base (`roles/base`)
@@ -235,6 +270,72 @@ make run
 ```bash
 ssh -p 2222 root@YOUR_SERVER_IP
 ```
+
+## Post-Bootstrap Verification
+
+After your first `make bootstrap`, run through this checklist to confirm the server is in the expected state. Most of it is automated via `make healthcheck`; a few items need a human at a workstation.
+
+### 1. Run the automated health check
+
+```bash
+make healthcheck
+```
+
+All asserts should pass. If any fail, fix the flagged issue before relying on the server.
+
+### 2. Confirm you can still SSH in
+
+From your workstation:
+
+```bash
+ssh -p 2222 root@YOUR_SERVER_IP
+```
+
+Should log you in without prompting for a password.
+
+### 3. Confirm password auth is actually disabled
+
+```bash
+ssh -o PasswordAuthentication=yes -o PreferredAuthentications=password -p 2222 root@YOUR_SERVER_IP
+```
+
+Should reject with `Permission denied (publickey)`. If it prompts for a password, `PasswordAuthentication no` didn't take — stop and fix before relying on the server.
+
+### 4. Confirm the old port is closed
+
+```bash
+nc -zv YOUR_SERVER_IP 22
+```
+
+Should fail to connect or time out. sshd should only be listening on the new port.
+
+### 5. If you added a non-sudo user, confirm AllowGroups blocks them
+
+If you created a user outside of `create-user.yml` and didn't add them to `sudo`, SSH as them:
+
+```bash
+ssh -p 2222 someuser@YOUR_SERVER_IP
+```
+
+Should reject. `/var/log/auth.log` on the server shows `not allowed because none of user's groups are listed in AllowGroups`.
+
+### 6. Quick on-server sanity check
+
+SSH in and run:
+
+```bash
+sudo ufw status verbose                       # Status: active, deny (incoming)
+sudo fail2ban-client status                   # Jail list: sshd, recidive
+systemctl is-active unattended-upgrades       # active
+```
+
+### 7. (Optional) Baseline hardening score
+
+```bash
+make audit
+```
+
+Lynis prints a Hardening index. Save the number — future runs let you trend it.
 
 ## Creating Additional Users
 
@@ -704,7 +805,7 @@ After `make bootstrap`, SSH moves to port 2222 and password auth is disabled. Co
 ssh -p 2222 root@YOUR_SERVER_IP
 ```
 
-If you're locked out, use your VPS provider's web console to fix `/etc/ssh/sshd_config`.
+If you're locked out, see **Lockout Recovery** below for the full walkthrough.
 
 ### "WARNING: A system reboot is required"
 
@@ -735,6 +836,70 @@ make dry-run
 ```
 
 This runs the playbook in check mode with diff output, showing what would change without actually changing anything.
+
+## Lockout Recovery
+
+If you can't SSH in after a playbook run, you're not stuck — your VPS provider's web console gives you root access even when sshd is broken. Walk through this in order.
+
+### 1. Access the provider's web console
+
+Every VPS provider offers a browser-based console. Common entry points:
+
+| Provider | Entry point |
+|----------|-------------|
+| DigitalOcean | Droplet page → Access → Launch Droplet Console |
+| Linode | Dashboard → the host → Launch LISH Console |
+| Hetzner Cloud | Server page → noVNC Console |
+| AWS EC2 | Connect → Serial Console (or EC2 Instance Connect) |
+| Vultr | Instance page → View Console |
+
+Log in as root. Most providers let you set or reset a root password from their UI if you don't have one.
+
+### 2. Triage — identify the failure mode
+
+```bash
+systemctl status ssh                          # is sshd running?
+ss -tlnp | grep sshd                          # what port is it bound to?
+ufw status verbose                            # firewall blocking something?
+fail2ban-client status sshd                   # is your IP banned?
+tail -30 /var/log/auth.log                    # why are connections failing?
+grep -E "^(Port|AllowGroups|ListenAddress)" /etc/ssh/sshd_config
+```
+
+### 3. Common fixes
+
+| Symptom | Fix |
+|---------|-----|
+| Your IP is in fail2ban's banlist | `fail2ban-client set sshd unbanip YOUR_IP` |
+| UFW blocks the SSH port | `ufw allow 2222/tcp && ufw reload` |
+| sshd bound to the wrong address | Edit `ListenAddress` in `/etc/ssh/sshd_config`, then `systemctl restart ssh` |
+| `AllowGroups` locks you out | Edit or comment out the line, then `systemctl restart ssh` |
+| sshd refuses key auth | Check `authorized_keys` perms: `chmod 600 /root/.ssh/authorized_keys` |
+
+### 4. Full config rollback from backup
+
+The playbook writes timestamped backups (`backup: true`) next to the original for `sshd_config`, `jail.local`, `daemon.json`, and `fstab`. When ansible can't reach the host, use them manually:
+
+```bash
+ls -lt /etc/ssh/sshd_config.*~                # most recent first
+cp /etc/ssh/sshd_config.<NNNN.TIMESTAMP>~ /etc/ssh/sshd_config
+sshd -t                                       # validate syntax
+systemctl restart ssh
+```
+
+Repeat the same pattern for `/etc/fail2ban/jail.local`, `/etc/docker/daemon.json`, or `/etc/fstab` as needed. This is the manual equivalent of `make rollback`.
+
+### 5. Verify access is restored
+
+From your workstation:
+
+```bash
+ssh -p 2222 root@YOUR_SERVER_IP
+```
+
+### 6. Fix the source of truth before re-running
+
+Don't just rerun `make run` — whatever broke the server is still in your `group_vars/all.yml`, `inventory/hosts.yml`, or a role template. Identify and fix the bad change, run `make dry-run` first, then `make run`.
 
 ## CI
 
