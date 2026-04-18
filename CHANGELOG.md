@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Documentation
 
+- Add README badges for CI, version, commit/changelog conventions, and Lynis ([cafae91](https://github.com/amiwrpremium/ansible-server-bootstrap/commit/cafae91d1f760d32bf4c4a9b6ff0b2de90960d25))
 - Add threat model, post-bootstrap checklist, and lockout recovery ([a771675](https://github.com/amiwrpremium/ansible-server-bootstrap/commit/a7716756649294f963c8e12cbac19af92e7778fc))
 - Document multi-role inventory pattern ([8255b57](https://github.com/amiwrpremium/ansible-server-bootstrap/commit/8255b57a275fed0690a621601b8a26e14ba3013a))
 - Bump minimum Ansible version to 2.17 ([ef2df94](https://github.com/amiwrpremium/ansible-server-bootstrap/commit/ef2df948ac5d8d0a4aaf959962585873e022517d))
@@ -40,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### CI/CD
 
+- Regenerate CHANGELOG.md ([36b3c20](https://github.com/amiwrpremium/ansible-server-bootstrap/commit/36b3c20d7ce0c544198fa4a1db6b17b2c3a2f96d))
 - Add .yamllint config and drop inline suppressions ([9ffdf96](https://github.com/amiwrpremium/ansible-server-bootstrap/commit/9ffdf969ec3b8504141e3534d2897130cb564e8c))
 - **deps:** Bump node_exporter to 1.11.1 ([278c07b](https://github.com/amiwrpremium/ansible-server-bootstrap/commit/278c07b71272ad8b9262eafd9771d07267ec793d))
 - Bump and SHA-pin GitHub Actions ([4c0c717](https://github.com/amiwrpremium/ansible-server-bootstrap/commit/4c0c717f92b26c67827c9ffe786d2f899d3fbaeb))
