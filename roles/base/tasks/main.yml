@@ -31,12 +31,20 @@
   ansible.builtin.apt:
     update_cache: true
     cache_valid_time: 3600
+  register: base_apt_cache
+  until: base_apt_cache is succeeded
+  retries: 3
+  delay: 5
 
 - name: Upgrade all packages
   ansible.builtin.apt:
     upgrade: dist
     autoremove: true
     autoclean: true
+  register: base_apt_upgrade
+  until: base_apt_upgrade is succeeded
+  retries: 3
+  delay: 5
 
 - name: Install essential packages
   ansible.builtin.apt:
@@ -61,6 +69,10 @@
       - sysstat
       - logrotate
     state: present
+  register: base_apt_essentials
+  until: base_apt_essentials is succeeded
+  retries: 3
+  delay: 5
 
 - name: Create keyrings directory
   ansible.builtin.file:

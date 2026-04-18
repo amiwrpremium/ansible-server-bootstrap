@@ -33,6 +33,10 @@
     dest: "/tmp/node_exporter.tar.gz"
     mode: '0644'
   when: not monitoring_node_exporter_binary.stat.exists
+  register: monitoring_node_exporter_download
+  until: monitoring_node_exporter_download is succeeded
+  retries: 3
+  delay: 5
 
 - name: Extract node_exporter
   ansible.builtin.unarchive:

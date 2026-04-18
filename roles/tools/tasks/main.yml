@@ -3,6 +3,10 @@
   ansible.builtin.apt:
     name: git
     state: present
+  register: tools_git_install
+  until: tools_git_install is succeeded
+  retries: 3
+  delay: 5
 
 - name: Configure Git
   ansible.builtin.copy:
@@ -21,6 +25,10 @@
     url: https://cli.github.com/packages/githubcli-archive-keyring.gpg
     dest: /etc/apt/keyrings/githubcli-archive-keyring.gpg
     mode: '0644'
+  register: tools_gh_key_download
+  until: tools_gh_key_download is succeeded
+  retries: 3
+  delay: 5
 
 - name: Add GitHub CLI repository
   ansible.builtin.apt_repository:
@@ -31,9 +39,17 @@
       https://cli.github.com/packages stable main
     filename: github-cli
     state: present
+  register: tools_gh_repo_add
+  until: tools_gh_repo_add is succeeded
+  retries: 3
+  delay: 5
 
 - name: Install GitHub CLI
   ansible.builtin.apt:
     name: gh
     state: present
     update_cache: true
+  register: tools_gh_install
+  until: tools_gh_install is succeeded
+  retries: 3
+  delay: 5

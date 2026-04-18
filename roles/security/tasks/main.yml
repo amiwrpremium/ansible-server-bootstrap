@@ -42,6 +42,10 @@
   ansible.builtin.apt:
     name: ufw
     state: present
+  register: security_ufw_install
+  until: security_ufw_install is succeeded
+  retries: 3
+  delay: 5
 
 - name: Set UFW default deny incoming
   community.general.ufw:
@@ -69,6 +73,10 @@
   ansible.builtin.apt:
     name: fail2ban
     state: present
+  register: security_fail2ban_install
+  until: security_fail2ban_install is succeeded
+  retries: 3
+  delay: 5
 
 - name: Configure fail2ban
   ansible.builtin.template:
@@ -164,6 +172,10 @@
       - unattended-upgrades
       - apt-listchanges
     state: present
+  register: security_uu_install
+  until: security_uu_install is succeeded
+  retries: 3
+  delay: 5
 
 - name: Configure unattended-upgrades
   ansible.builtin.template:
@@ -189,6 +201,10 @@
   ansible.builtin.apt:
     name: needrestart
     state: present
+  register: security_needrestart_install
+  until: security_needrestart_install is succeeded
+  retries: 3
+  delay: 5
 
 - name: Configure needrestart to automatic mode
   ansible.builtin.lineinfile:
