@@ -19,7 +19,6 @@
 
 - name: Set architecture
   ansible.builtin.set_fact:
-    # yamllint disable-line rule:line-length
     monitoring_node_exporter_arch: >-
       {{ 'amd64' if monitoring_arch_raw.stdout == 'x86_64'
       else 'arm64' if monitoring_arch_raw.stdout == 'aarch64'
@@ -28,7 +27,6 @@
 
 - name: Download node_exporter
   ansible.builtin.get_url:
-    # yamllint disable-line rule:line-length
     url: "https://github.com/prometheus/node_exporter/releases/download/v{{ node_exporter_version }}/node_exporter-{{ node_exporter_version }}.linux-{{ monitoring_node_exporter_arch }}.tar.gz"
     dest: "/tmp/node_exporter.tar.gz"
     mode: '0644'
