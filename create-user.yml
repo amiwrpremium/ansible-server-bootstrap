@@ -19,15 +19,53 @@
       private: false
 
   tasks:
-    - name: Validate username is provided
+    - name: Validate username format
       ansible.builtin.fail:
-        msg: "Username cannot be empty"
-      when: username | length == 0
+        msg: "Username must be POSIX-valid: lowercase letter or underscore start, then [a-z0-9_-], max 32 chars. Got: '{{ username }}'"
+      when: not (username is match("^[a-z_][a-z0-9_-]{0,31}$"))
 
-    - name: Validate SSH key is provided
+    - name: Reject system-reserved usernames
       ansible.builtin.fail:
-        msg: "SSH public key cannot be empty"
-      when: user_ssh_public_key | length == 0
+        msg: "Refusing to create/modify user '{{ username }}' — reserved for the system."
+      vars:
+        reserved_users:
+          - root
+          - daemon
+          - bin
+          - sys
+          - sync
+          - games
+          - man
+          - lp
+          - mail
+          - news
+          - uucp
+          - proxy
+          - www-data
+          - backup
+          - list
+          - irc
+          - gnats
+          - nobody
+          - systemd-network
+          - systemd-resolve
+          - systemd-timesync
+          - messagebus
+          - syslog
+          - apt
+          - uuidd
+          - tcpdump
+          - landscape
+          - pollinate
+          - sshd
+          - lxd
+          - node_exporter
+      when: username in reserved_users
+
+    - name: Validate SSH public key format
+      ansible.builtin.fail:
+        msg: "SSH public key doesn't look valid. Expected format: 'ssh-ed25519 AAAA...', 'ssh-rsa AAAA...', 'ecdsa-sha2-... AAAA...', or a sk-* FIDO variant."
+      when: not (user_ssh_public_key is match("^(ssh-(ed25519|rsa|dss)|ecdsa-sha2-nistp(256|384|521)|sk-(ssh-ed25519|ecdsa-sha2-nistp256)@openssh\\.com) [A-Za-z0-9+/=]+"))
 
     - name: Create user
       ansible.builtin.user:
