@@ -8,12 +8,14 @@
     mode: '0700'
     owner: root
     group: root
+  tags: [ssh]
 
 - name: Add authorized SSH key
   ansible.posix.authorized_key:
     user: root
     state: present
     key: "{{ ssh_public_key }}"
+  tags: [ssh]
 
 - name: Configure SSH daemon
   ansible.builtin.template:
@@ -25,6 +27,7 @@
     validate: '/usr/sbin/sshd -t -f %s'
     backup: true
   notify: Restart SSH
+  tags: [ssh]
 
 - name: Create SSH banner
   ansible.builtin.copy:
@@ -36,6 +39,7 @@
     owner: root
     group: root
     mode: '0644'
+  tags: [ssh]
 
 # UFW
 
@@ -47,26 +51,31 @@
   until: security_ufw_install is succeeded
   retries: 3
   delay: 5
+  tags: [firewall]
 
 - name: Set UFW default deny incoming
   community.general.ufw:
     direction: incoming
     policy: deny
+  tags: [firewall]
 
 - name: Set UFW default allow outgoing
   community.general.ufw:
     direction: outgoing
     policy: allow
+  tags: [firewall]
 
 - name: Rate limit SSH on custom port
   community.general.ufw:
     rule: limit
     port: "{{ ssh_port }}"
     proto: tcp
+  tags: [firewall]
 
 - name: Enable UFW
   community.general.ufw:
     state: enabled
+  tags: [firewall]
 
 # Fail2ban
 
@@ -78,6 +87,7 @@
   until: security_fail2ban_install is succeeded
   retries: 3
   delay: 5
+  tags: [fail2ban]
 
 - name: Configure fail2ban
   ansible.builtin.template:
@@ -88,12 +98,14 @@
     mode: '0644'
     backup: true
   notify: Restart fail2ban
+  tags: [fail2ban]
 
 - name: Enable fail2ban
   ansible.builtin.systemd:
     name: fail2ban
     state: started
     enabled: true
+  tags: [fail2ban]
 
 # Kernel hardening
 
@@ -130,6 +142,7 @@
     - { name: 'kernel.kptr_restrict', value: '2' }
     - { name: 'fs.protected_hardlinks', value: '1' }
     - { name: 'fs.protected_symlinks', value: '1' }
+  tags: [kernel]
 
 - name: Enable TCP BBR congestion control
   ansible.posix.sysctl:
@@ -141,6 +154,7 @@
   loop:
     - { name: 'net.core.default_qdisc', value: 'fq' }
     - { name: 'net.ipv4.tcp_congestion_control', value: 'bbr' }
+  tags: [kernel]
 
 - name: Harden /dev/shm
   ansible.posix.mount:
@@ -149,6 +163,7 @@
     fstype: tmpfs
     opts: defaults,noexec,nosuid,nodev
     state: mounted
+  tags: [kernel]
 
 - name: Blacklist unused kernel modules
   ansible.builtin.copy:
@@ -165,6 +180,7 @@
       blacklist rds
       blacklist tipc
     mode: '0644'
+  tags: [kernel]
 
 # Unattended upgrades
 
@@ -178,6 +194,7 @@
   until: security_uu_install is succeeded
   retries: 3
   delay: 5
+  tags: [updates]
 
 - name: Configure unattended-upgrades
   ansible.builtin.template:
@@ -186,6 +203,7 @@
     owner: root
     group: root
     mode: '0644'
+  tags: [updates]
 
 - name: Enable automatic updates
   ansible.builtin.copy:
@@ -198,6 +216,7 @@
     owner: root
     group: root
     mode: '0644'
+  tags: [updates]
 
 - name: Install needrestart
   ansible.builtin.apt:
@@ -207,17 +226,20 @@
   until: security_needrestart_install is succeeded
   retries: 3
   delay: 5
+  tags: [updates]
 
 - name: Configure needrestart to automatic mode
   ansible.builtin.lineinfile:
     path: /etc/needrestart/needrestart.conf
     regexp: '^\$nrconf\{restart\}'
     line: "$nrconf{restart} = 'a';"
+  tags: [updates]
 
 - name: Lock root password
   ansible.builtin.user:
     name: root
     password_lock: true
+  tags: [ssh]
 
 # Reboot check
 
@@ -225,8 +247,10 @@
   ansible.builtin.stat:
     path: /var/run/reboot-required
   register: security_reboot_required
+  tags: [reboot]
 
 - name: Warn if reboot is required
   ansible.builtin.debug:
     msg: "WARNING: A system reboot is required (likely due to a kernel update). Please schedule a reboot."
   when: security_reboot_required.stat.exists
+  tags: [reboot]

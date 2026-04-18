@@ -319,6 +319,28 @@ ansible-playbook playbook.yml -e "hostname=web-prod" -e "swap_size=2G" -e "ssh_p
 | `make create-user` | Create a new sudo user (interactive) |
 | `make changelog` | Generate CHANGELOG.md from commit history |
 
+### Targeting subsystems inside the security role
+
+The security role is further tagged so you can run just one subsystem without touching the others:
+
+| Tag | Scope |
+|-----|-------|
+| `ssh` | SSH daemon config, authorized key, banner, root password lock |
+| `firewall` | UFW install, policies, rate-limit rule, enable |
+| `fail2ban` | fail2ban install, jail config, service enable |
+| `kernel` | sysctl hardening, TCP BBR, `/dev/shm`, module blacklist |
+| `updates` | unattended-upgrades, needrestart |
+| `reboot` | Detect and warn if a reboot is pending |
+
+Usage:
+
+```bash
+ansible-playbook playbook.yml --tags ssh
+ansible-playbook playbook.yml --tags kernel
+```
+
+`--tags security` still runs the entire security role (every task carries both the role tag and its subsystem tag). Use `ansible-playbook playbook.yml --list-tags` to see all available tags.
+
 ## Node Exporter
 
 Node exporter listens on `127.0.0.1:9100` by default (not exposed to the internet). To access metrics:
