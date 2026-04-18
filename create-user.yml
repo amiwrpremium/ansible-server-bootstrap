@@ -65,6 +65,7 @@
     - name: Validate SSH public key format
       ansible.builtin.fail:
         msg: "SSH public key doesn't look valid. Expected format: 'ssh-ed25519 AAAA...', 'ssh-rsa AAAA...', 'ecdsa-sha2-... AAAA...', or a sk-* FIDO variant."
+      # yamllint disable-line rule:line-length
       when: not (user_ssh_public_key is match("^(ssh-(ed25519|rsa|dss)|ecdsa-sha2-nistp(256|384|521)|sk-(ssh-ed25519|ecdsa-sha2-nistp256)@openssh\\.com) [A-Za-z0-9+/=]+"))
 
     - name: Create user
