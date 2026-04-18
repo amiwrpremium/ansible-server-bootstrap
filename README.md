@@ -1,10 +1,15 @@
 # ansible-server-bootstrap
 
 [![Ansible Lint](https://github.com/amiwrpremium/ansible-server-bootstrap/actions/workflows/lint.yml/badge.svg)](https://github.com/amiwrpremium/ansible-server-bootstrap/actions/workflows/lint.yml)
+[![Release](https://github.com/amiwrpremium/ansible-server-bootstrap/actions/workflows/release.yml/badge.svg)](https://github.com/amiwrpremium/ansible-server-bootstrap/actions/workflows/release.yml)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/b06f39bab2b6443192dc03fde0ca53cc)](https://app.codacy.com/gh/amiwrpremium/ansible-server-bootstrap/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
+[![Latest Release](https://img.shields.io/github/v/release/amiwrpremium/ansible-server-bootstrap)](https://github.com/amiwrpremium/ansible-server-bootstrap/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Ubuntu](https://img.shields.io/badge/Ubuntu-24.04+-orange.svg)](https://ubuntu.com/)
 [![Ansible](https://img.shields.io/badge/Ansible-2.17+-red.svg)](https://docs.ansible.com/)
+[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://conventionalcommits.org)
+[![Keep a Changelog](https://img.shields.io/badge/Changelog-Keep%20a%20Changelog-blueviolet)](https://keepachangelog.com/en/1.1.0/)
+[![Hardened with Lynis](https://img.shields.io/badge/Hardened%20with-Lynis-blue)](https://cisofy.com/lynis/)
 
 Ansible playbook for provisioning and hardening a fresh Ubuntu 24.04+ VPS. One command to go from a bare server to a fully configured, secured, production-ready machine.
 
