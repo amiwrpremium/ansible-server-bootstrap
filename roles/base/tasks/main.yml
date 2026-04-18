@@ -82,11 +82,38 @@
     line: 'SystemMaxFileSize=50M'
   notify: Restart journald
 
-- name: Enable NTP sync
+- name: Gather service facts
+  ansible.builtin.service_facts:
+
+- name: Install systemd-timesyncd if no time sync service is present
+  ansible.builtin.apt:
+    name: systemd-timesyncd
+    state: present
+  when:
+    - "'chrony.service' not in ansible_facts.services"
+    - "'systemd-timesyncd.service' not in ansible_facts.services"
+  register: base_timesyncd_install
+  until: base_timesyncd_install is succeeded
+  retries: 3
+  delay: 5
+
+- name: Re-gather service facts after potential install
+  ansible.builtin.service_facts:
+  when: base_timesyncd_install is changed
+
+- name: Enable chrony time sync
+  ansible.builtin.systemd:
+    name: chrony
+    state: started
+    enabled: true
+  when: "'chrony.service' in ansible_facts.services"
+
+- name: Enable systemd-timesyncd
   ansible.builtin.systemd:
     name: systemd-timesyncd
     state: started
     enabled: true
+  when: "'chrony.service' not in ansible_facts.services"
 
 - name: Check if swap file exists
   ansible.builtin.stat:
