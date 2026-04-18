@@ -20,6 +20,12 @@ ssh_max_auth_tries: 3
 ssh_allow_groups:
   - sudo
   - root
+
+# Additional UFW allow rules (beyond SSH which is rate-limited separately)
+ufw_allow_ports: []
+# ufw_allow_ports:
+#   - { port: 80, proto: tcp }
+#   - { port: 443, proto: tcp }
 fail2ban_bantime: 3600
 fail2ban_findtime: 600
 fail2ban_maxretry: 3

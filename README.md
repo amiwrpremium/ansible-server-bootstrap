@@ -66,6 +66,7 @@ This software is provided "as is", without warranty of any kind. Use at your own
 - **UFW firewall**:
   - Default deny incoming, allow outgoing
   - Rate-limited SSH on the configured port (complements fail2ban)
+  - Additional allow rules via `ufw_allow_ports` (e.g., HTTP/HTTPS for web hosts)
 - **Fail2ban**:
   - SSH jail enabled with configurable ban time (default: 1 hour), find time (10 min), and max retries (3)
   - Recidive jail enabled by default: escalates to a 1-week ban after 5 bans within 24 hours
@@ -332,6 +333,7 @@ All variables are in `group_vars/all.yml`. Every variable has a sensible default
 | `swap_swappiness` | `10` | Swap aggressiveness (0-100, lower = less swap) |
 | `ssh_max_auth_tries` | `3` | Max SSH authentication attempts |
 | `ssh_allow_groups` | `["sudo", "root"]` | Groups allowed to SSH in. Empty list disables the restriction. |
+| `ufw_allow_ports` | `[]` | Additional UFW allow rules. List of `{port, proto}` dicts; `proto` defaults to `tcp`. |
 | `fail2ban_bantime` | `3600` | Ban duration in seconds (1 hour) |
 | `fail2ban_findtime` | `600` | Time window for counting failures (10 min) |
 | `fail2ban_maxretry` | `3` | Max failures before ban |
