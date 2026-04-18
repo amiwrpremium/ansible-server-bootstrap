@@ -262,6 +262,15 @@
   delay: 5
   tags: [audit]
 
+- name: Configure Lynis custom profile
+  ansible.builtin.template:
+    src: lynis-custom.prf.j2
+    dest: /etc/lynis/custom.prf
+    owner: root
+    group: root
+    mode: '0644'
+  tags: [audit]
+
 # Log forwarding
 
 - name: Install rsyslog

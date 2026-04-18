@@ -350,6 +350,7 @@ All variables are in `group_vars/all.yml`. Every variable has a sensible default
 | `remote_syslog_port` | `514` | Remote syslog port |
 | `remote_syslog_protocol` | `tcp` | `tcp` or `udp` |
 | `remote_syslog_facilities` | `auth.*;authpriv.*;kern.*` | rsyslog selector for what to forward |
+| `lynis_skip_tests` | `{}` | Dict of Lynis test IDs to skip (reason becomes an inline comment in `/etc/lynis/custom.prf`). |
 
 ### Overriding variables at runtime
 
@@ -442,6 +443,21 @@ make audit
 Lynis complements this playbook — it flags gaps we don't address (PAM hardening, auditd rules, banner wording, package integrity, etc.) and gives a measurable score you can trend over time.
 
 The full log lives at `/var/log/lynis.log` on the target, with a machine-readable report at `/var/log/lynis-report.dat`. To scan only a specific test group (e.g., malware, authentication), SSH in and run `lynis audit system --tests-from-group authentication`.
+
+### Suppressing tests that don't apply
+
+Some Lynis tests don't match how this playbook operates (e.g., GRUB password on a VPS with no physical console, password-aging rules in a key-only access model). Skip them via `lynis_skip_tests` in `group_vars/all.yml`:
+
+```yaml
+lynis_skip_tests:
+  BOOT-5122: "GRUB password irrelevant on a VPS with no console"
+  HRDN-7220: "Compilers required for docker buildx"
+  AUTH-9283: "Password aging irrelevant — key-only access model"
+```
+
+Keys are Lynis test IDs (like `BOOT-5122`); values are reasons preserved as inline comments in the generated `/etc/lynis/custom.prf`. Skipped tests don't run, don't appear in warnings/suggestions, and don't contribute to the hardening index denominator.
+
+Find the exact test ID for any finding by checking `/var/log/lynis.log` after a run, or at <https://cisofy.com/lynis/controls/>.
 
 ## Node Exporter
 

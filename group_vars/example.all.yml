@@ -48,3 +48,13 @@ remote_syslog_host: ""
 remote_syslog_port: 514
 remote_syslog_protocol: "tcp"   # "tcp" or "udp"
 remote_syslog_facilities: "auth.*;authpriv.*;kern.*"
+
+# Lynis tests to skip (empty = run every test).
+# Keys are Lynis test IDs; values are reasons documented inline in /etc/lynis/custom.prf.
+lynis_skip_tests: {}
+# lynis_skip_tests:
+#   BOOT-5122: "GRUB password irrelevant on a VPS with no console"
+#   HRDN-7220: "Compilers required for docker buildx"
+#   PKGS-7346: "chkrootkit not used — high false-positive rate"
+#   PKGS-7370: "debsums not used — AIDE preferred if needed"
+#   AUTH-9283: "Password aging irrelevant — key-only access model"
