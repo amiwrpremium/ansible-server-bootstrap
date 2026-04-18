@@ -41,6 +41,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### CI/CD
 
+- Enforce Conventional Commits on pull requests ([e480525](https://github.com/amiwrpremium/ansible-server-bootstrap/commit/e4805253daa898d6506f84280427a91fa7338bfe))
+- Extend release workflow gates to every playbook ([661a2d1](https://github.com/amiwrpremium/ansible-server-bootstrap/commit/661a2d104d84427908181f68b37c621afeb849cd))
+- Harden lint workflow with yamllint, shellcheck, and full-playbook gates ([5bda67e](https://github.com/amiwrpremium/ansible-server-bootstrap/commit/5bda67e338c5e1ed17285df72fe51bb2ec2c0aad))
+- Regenerate CHANGELOG.md ([ba0ba85](https://github.com/amiwrpremium/ansible-server-bootstrap/commit/ba0ba854e75c38d77914e82b0f4a3041242838eb))
 - Regenerate CHANGELOG.md ([36b3c20](https://github.com/amiwrpremium/ansible-server-bootstrap/commit/36b3c20d7ce0c544198fa4a1db6b17b2c3a2f96d))
 - Add .yamllint config and drop inline suppressions ([9ffdf96](https://github.com/amiwrpremium/ansible-server-bootstrap/commit/9ffdf969ec3b8504141e3534d2897130cb564e8c))
 - **deps:** Bump node_exporter to 1.11.1 ([278c07b](https://github.com/amiwrpremium/ansible-server-bootstrap/commit/278c07b71272ad8b9262eafd9771d07267ec793d))
