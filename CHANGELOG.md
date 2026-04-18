@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Documentation
 
+- Add Contributor Covenant code of conduct ([0df93b1](https://github.com/amiwrpremium/ansible-server-bootstrap/commit/0df93b1b406487f30f35b80f82014522159b92de))
 - Add README badges for CI, version, commit/changelog conventions, and Lynis ([cafae91](https://github.com/amiwrpremium/ansible-server-bootstrap/commit/cafae91d1f760d32bf4c4a9b6ff0b2de90960d25))
 - Add threat model, post-bootstrap checklist, and lockout recovery ([a771675](https://github.com/amiwrpremium/ansible-server-bootstrap/commit/a7716756649294f963c8e12cbac19af92e7778fc))
 - Document multi-role inventory pattern ([8255b57](https://github.com/amiwrpremium/ansible-server-bootstrap/commit/8255b57a275fed0690a621601b8a26e14ba3013a))
@@ -43,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### CI/CD
 
+- Regenerate CHANGELOG.md ([df7d73f](https://github.com/amiwrpremium/ansible-server-bootstrap/commit/df7d73f18dbba1ce1fdf18cea115ce97a27f9934))
 - Regenerate CHANGELOG.md ([ffb4e5e](https://github.com/amiwrpremium/ansible-server-bootstrap/commit/ffb4e5eeb45f372ccbd5a5bbc3bbad93ff33a66e))
 - Regenerate CHANGELOG.md ([c59a029](https://github.com/amiwrpremium/ansible-server-bootstrap/commit/c59a02974f464def61b85f3d54ae29b597f9d10a))
 - Enforce Conventional Commits on pull requests ([e480525](https://github.com/amiwrpremium/ansible-server-bootstrap/commit/e4805253daa898d6506f84280427a91fa7338bfe))
