@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Bug Fixes
 
+- **ci:** Satisfy ansible-lint name-casing and no-handler checks ([94c192e](https://github.com/amiwrpremium/ansible-server-bootstrap/commit/94c192e88454dca04594e53c1efa2e10a458986b))
 - **ci:** Suppress line-length on create-user.yml regex when-clause ([f4febbc](https://github.com/amiwrpremium/ansible-server-bootstrap/commit/f4febbc0d42591452de8c6bdb9385596cdbfb6ac))
 - **ci:** Unbreak yamllint on inline-dict braces and long URL ([bd4fd00](https://github.com/amiwrpremium/ansible-server-bootstrap/commit/bd4fd00301b366966c674eb3291752d7450561a6))
 - Validate shipped placeholders trip the pre_task guards ([7f4b444](https://github.com/amiwrpremium/ansible-server-bootstrap/commit/7f4b4445edae598487a797a3a18c44c8853df16b))
@@ -44,6 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### CI/CD
 
+- Regenerate CHANGELOG.md ([caedb4f](https://github.com/amiwrpremium/ansible-server-bootstrap/commit/caedb4f0049ba9d6bf48b17bc98088b824cfc308))
 - Regenerate CHANGELOG.md ([df7d73f](https://github.com/amiwrpremium/ansible-server-bootstrap/commit/df7d73f18dbba1ce1fdf18cea115ce97a27f9934))
 - Regenerate CHANGELOG.md ([ffb4e5e](https://github.com/amiwrpremium/ansible-server-bootstrap/commit/ffb4e5eeb45f372ccbd5a5bbc3bbad93ff33a66e))
 - Regenerate CHANGELOG.md ([c59a029](https://github.com/amiwrpremium/ansible-server-bootstrap/commit/c59a02974f464def61b85f3d54ae29b597f9d10a))
