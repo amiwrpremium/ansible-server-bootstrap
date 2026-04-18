@@ -1,7 +1,7 @@
 ---
 # SSH
 ssh_port: 2222
-ssh_public_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA... you@example.com"
+ssh_public_key: "CHANGE_ME"
 
 # System
 hostname: "server"

@@ -13,12 +13,12 @@
     - name: Validate SSH public key is configured
       ansible.builtin.fail:
         msg: "ssh_public_key is not configured. Set it in group_vars/all.yml or pass it with -e ssh_public_key='ssh-ed25519 ...'"
-      when: ssh_public_key == 'CHANGE_ME'
+      when: ssh_public_key == 'CHANGE_ME' or ssh_public_key | length == 0
 
     - name: Validate ansible_host is configured
       ansible.builtin.fail:
         msg: "ansible_host is not configured. Set the server IP in inventory/hosts.yml"
-      when: ansible_host == 'CHANGE_ME'
+      when: ansible_host == 'CHANGE_ME' or ansible_host | length == 0
 
   roles:
     - { role: base, tags: ['base'] }
