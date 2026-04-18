@@ -1,4 +1,4 @@
-.PHONY: install bootstrap run check syntax ping dry-run lint create-user base security docker tools monitoring changelog audit healthcheck
+.PHONY: install bootstrap run check syntax ping dry-run lint create-user base security docker tools monitoring changelog audit healthcheck rollback
 
 install:
 	git config core.hooksPath .githooks
@@ -53,3 +53,6 @@ audit:
 
 healthcheck:
 	ansible-playbook healthcheck.yml
+
+rollback:
+	ansible-playbook rollback.yml

@@ -381,6 +381,7 @@ ansible-playbook playbook.yml -e "hostname=web-prod" -e "swap_size=2G" -e "ssh_p
 | `make changelog` | Generate CHANGELOG.md from commit history |
 | `make audit` | Run a Lynis security audit and show the hardening score |
 | `make healthcheck` | Verify the server is in the expected state (read-only) |
+| `make rollback` | Restore critical config files from their most recent backup |
 
 ### Targeting subsystems inside the security role
 
@@ -477,6 +478,31 @@ lynis_skip_tests:
 Keys are Lynis test IDs (like `BOOT-5122`); values are reasons preserved as inline comments in the generated `/etc/lynis/custom.prf`. Skipped tests don't run, don't appear in warnings/suggestions, and don't contribute to the hardening index denominator.
 
 Find the exact test ID for any finding by checking `/var/log/lynis.log` after a run, or at <https://cisofy.com/lynis/controls/>.
+
+## Rollback
+
+`make rollback` restores the most recent `backup: true` artifact for each of these files, and restarts the affected services:
+
+| File | Tag | Service restarted |
+|------|-----|-------------------|
+| `/etc/ssh/sshd_config` | `ssh` | `ssh` |
+| `/etc/fail2ban/jail.local` | `fail2ban` | `fail2ban` |
+| `/etc/docker/daemon.json` | `docker` | `docker` |
+| `/etc/fstab` | `base` | (none — takes effect on next mount/boot) |
+
+Each restore is validated where possible (`sshd -t` on sshd_config). Scope to a single file via tags:
+
+```bash
+ansible-playbook rollback.yml --tags ssh
+```
+
+If no backup exists (e.g., the file has never been changed by the playbook), the task reports "No backup found, skipping." The backup itself is left in place after a restore so you can inspect or re-rollback.
+
+**Limitations:**
+
+- Restores the *most recent* backup only. If that backup is also broken, you'll need to pick an older one manually (they're next to the original with `.NNNN.TIMESTAMP~` suffix).
+- fstab rollback doesn't run `mount -a` — run it manually if you need the changes to take effect immediately.
+- The rollback runs over SSH, so if SSH itself is broken you'll need to connect via your VPS provider's web console and run it from the target or copy the backup file back by hand.
 
 ## Node Exporter
 
