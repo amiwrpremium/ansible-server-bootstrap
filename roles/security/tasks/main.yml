@@ -10,11 +10,12 @@
     group: root
   tags: [ssh]
 
-- name: Add authorized SSH key
+- name: Add authorized SSH keys
   ansible.posix.authorized_key:
     user: root
     state: present
-    key: "{{ ssh_public_key }}"
+    exclusive: "{{ ssh_authorized_keys_exclusive | default(true) }}"
+    key: "{{ ssh_public_keys | join('\n') }}"
   tags: [ssh]
 
 - name: Configure SSH daemon

@@ -169,12 +169,14 @@ all:
 
 > **Note:** The inventory uses port 2222 because that's what the server will use after the playbook runs. For the first run, `make bootstrap` automatically overrides this to port 22.
 
-### Step 5: Configure your SSH public key
+### Step 5: Configure your SSH public keys
 
-Edit `group_vars/all.yml` and set your SSH public key:
+Edit `group_vars/all.yml` and set at least one SSH public key. This is a list — add an entry per admin who should have root access:
 
 ```yaml
-ssh_public_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA... your-email@example.com"
+ssh_public_keys:
+  - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA... alice@example.com"
+  - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA... bob@example.com"
 ```
 
 To get your public key:
@@ -267,6 +269,48 @@ ansible-playbook create-user.yml \
 ssh -p 2222 deploy@YOUR_SERVER_IP
 ```
 
+## Managing Admin Keys
+
+Root access is controlled by `ssh_public_keys` in `group_vars/all.yml`. Each key is a separate admin.
+
+### Add an admin
+
+```yaml
+ssh_public_keys:
+  - "ssh-ed25519 AAAA... alice@example.com"
+  - "ssh-ed25519 AAAA... bob@example.com"   # <-- new admin
+```
+
+```bash
+make run
+```
+
+### Revoke an admin
+
+Remove the line, then rerun. The playbook will remove the key from `/root/.ssh/authorized_keys`:
+
+```yaml
+ssh_public_keys:
+  - "ssh-ed25519 AAAA... alice@example.com"
+  # bob removed
+```
+
+```bash
+make run
+```
+
+This revocation only works because `ssh_authorized_keys_exclusive` defaults to `true` — the playbook treats `ssh_public_keys` as the complete authoritative list. Any key present on the server but not in the list gets removed on each run, including keys added manually via `ssh-copy-id`.
+
+### Preserving ad-hoc keys
+
+If you need to keep keys that aren't managed by the playbook (e.g., emergency access), set:
+
+```yaml
+ssh_authorized_keys_exclusive: false
+```
+
+In that mode, the playbook only adds keys; it never removes them. You'll have to revoke keys manually.
+
 ## Configuration Reference
 
 All variables are in `group_vars/all.yml`. Every variable has a sensible default.
@@ -274,7 +318,8 @@ All variables are in `group_vars/all.yml`. Every variable has a sensible default
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `ssh_port` | `2222` | SSH listen port |
-| `ssh_public_key` | `CHANGE_ME` | Your SSH public key (required) |
+| `ssh_public_keys` | `["CHANGE_ME"]` | List of SSH public keys authorized for root (required, at least one) |
+| `ssh_authorized_keys_exclusive` | `true` | When `true`, any keys in root's `authorized_keys` not in `ssh_public_keys` are removed on each run. Set `false` to preserve ad-hoc keys. |
 | `hostname` | `server` | Server hostname |
 | `timezone` | `UTC` | Server timezone |
 | `system_locale` | `en_US.UTF-8` | System locale |
@@ -435,7 +480,7 @@ ansible-playbook playbook.yml --limit web-1
 
 ## Troubleshooting
 
-### "ssh_public_key is not configured"
+### "ssh_public_keys is not configured"
 
 You forgot to create your config file or set your SSH public key. Make sure you copied the example:
 
@@ -443,10 +488,21 @@ You forgot to create your config file or set your SSH public key. Make sure you 
 cp group_vars/example.all.yml group_vars/all.yml
 ```
 
-Then edit `group_vars/all.yml` and set your key:
+Then edit `group_vars/all.yml` and set at least one real key:
 
 ```yaml
-ssh_public_key: "ssh-ed25519 AAAA... you@example.com"
+ssh_public_keys:
+  - "ssh-ed25519 AAAA... you@example.com"
+```
+
+### "ssh_public_key (scalar) has been replaced by ssh_public_keys (list)"
+
+The variable name and type changed. Update `group_vars/all.yml`:
+
+```diff
+-ssh_public_key: "ssh-ed25519 AAAA... you@example.com"
++ssh_public_keys:
++  - "ssh-ed25519 AAAA... you@example.com"
 ```
 
 ### "ansible_host is not configured"

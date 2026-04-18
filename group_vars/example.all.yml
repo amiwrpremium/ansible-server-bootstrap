@@ -1,7 +1,9 @@
 ---
 # SSH
 ssh_port: 2222
-ssh_public_key: "CHANGE_ME"
+ssh_public_keys:
+  - "CHANGE_ME"
+# ssh_authorized_keys_exclusive: true  # default; set false to keep ad-hoc keys in root's authorized_keys
 
 # System
 hostname: "server"

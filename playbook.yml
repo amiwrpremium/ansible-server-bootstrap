@@ -10,10 +10,25 @@
         msg: "This playbook requires Ubuntu 24.04 or later. Detected: {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }}"
       when: ansible_facts['distribution'] != 'Ubuntu' or ansible_facts['distribution_version'] is version('24.04', '<')
 
-    - name: Validate SSH public key is configured
+    - name: Detect deprecated ssh_public_key scalar
       ansible.builtin.fail:
-        msg: "ssh_public_key is not configured. Set it in group_vars/all.yml or pass it with -e ssh_public_key='ssh-ed25519 ...'"
-      when: ssh_public_key == 'CHANGE_ME' or ssh_public_key | length == 0
+        msg: |
+          `ssh_public_key` (scalar) has been replaced by `ssh_public_keys` (list).
+          Update group_vars/all.yml:
+            ssh_public_keys:
+              - "ssh-ed25519 AAAA... you@example.com"
+      when: ssh_public_key is defined
+
+    - name: Validate ssh_public_keys is configured
+      ansible.builtin.fail:
+        msg: "ssh_public_keys is not configured. Set at least one real key in group_vars/all.yml."
+      when: ssh_public_keys | length == 0 or 'CHANGE_ME' in ssh_public_keys
+
+    - name: Validate each SSH public key format
+      ansible.builtin.fail:
+        msg: "Invalid SSH public key format: '{{ item[:40] }}...'. Expected: 'ssh-ed25519 AAAA...' or similar."
+      loop: "{{ ssh_public_keys }}"
+      when: not (item is match("^(ssh-(ed25519|rsa|dss)|ecdsa-sha2-nistp(256|384|521)|sk-(ssh-ed25519|ecdsa-sha2-nistp256)@openssh\\.com) [A-Za-z0-9+/=]+"))
 
     - name: Validate ansible_host is configured
       ansible.builtin.fail:
