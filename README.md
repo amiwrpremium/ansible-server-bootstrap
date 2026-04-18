@@ -86,6 +86,7 @@ This software is provided "as is", without warranty of any kind. Use at your own
 - **Needrestart**: Automatically restarts services after package updates
 - **Reboot check**: Warns at the end of each run if a reboot is pending (e.g., after kernel updates)
 - **Lynis**: Installs [Lynis](https://cisofy.com/lynis/) for on-demand security auditing (run via `make audit`)
+- **Remote syslog forwarding** (optional): Forwards `auth.*`, `authpriv.*`, `kern.*` to a remote collector when `remote_syslog_host` is set
 
 ### Docker (`roles/docker`)
 
@@ -343,6 +344,10 @@ All variables are in `group_vars/all.yml`. Every variable has a sensible default
 | `unattended_upgrades_mail` | `""` | Email for upgrade notifications (empty = disabled) |
 | `unattended_upgrades_auto_reboot` | `false` | Auto-reboot after kernel updates |
 | `unattended_upgrades_auto_reboot_time` | `02:00` | Auto-reboot time (if enabled) |
+| `remote_syslog_host` | `""` | Remote syslog collector hostname/IP. Empty = disabled. |
+| `remote_syslog_port` | `514` | Remote syslog port |
+| `remote_syslog_protocol` | `tcp` | `tcp` or `udp` |
+| `remote_syslog_facilities` | `auth.*;authpriv.*;kern.*` | rsyslog selector for what to forward |
 
 ### Overriding variables at runtime
 
@@ -394,6 +399,35 @@ ansible-playbook playbook.yml --tags kernel
 ```
 
 `--tags security` still runs the entire security role (every task carries both the role tag and its subsystem tag). Use `ansible-playbook playbook.yml --list-tags` to see all available tags.
+
+## Remote Syslog
+
+When `remote_syslog_host` is set, rsyslog is configured to forward `auth.*`, `authpriv.*`, and `kern.*` to the remote collector. This preserves forensic evidence (SSH logins, sudo, fail2ban bans, kernel messages) off-host in case the server is compromised and its local logs wiped.
+
+```yaml
+remote_syslog_host: "10.0.0.5"
+remote_syslog_port: 514
+remote_syslog_protocol: "tcp"   # or "udp"
+remote_syslog_facilities: "auth.*;authpriv.*;kern.*"
+```
+
+Empty `remote_syslog_host` disables the feature; the playbook removes the config file on next run.
+
+**Testing the forward:** on the collector, run a listener and trigger a login on the target:
+
+```bash
+# on the collector (TCP)
+sudo nc -l 514
+
+# on the target — any sudo command or SSH login fires auth events
+ssh -p 2222 root@TARGET_IP 'true'
+```
+
+**Limitations:**
+
+- **Plaintext on the wire.** Logs are not encrypted; deploy the collector on a private/VPN network. TLS (RFC 5425) is a future enhancement.
+- **Collector outage buffering.** If the remote is unreachable, rsyslog queues messages in memory (default small queue, may drop old entries). Tune with additional rsyslog config if you need reliable delivery.
+- **No apply-time reachability check.** A typo in `remote_syslog_host` won't fail the playbook — logs quietly pile up locally. Verify manually after changing the var.
 
 ## Security Audit
 

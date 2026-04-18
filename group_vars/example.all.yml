@@ -36,3 +36,9 @@ node_exporter_listen_address: "127.0.0.1:9100"
 unattended_upgrades_mail: ""
 unattended_upgrades_auto_reboot: false
 unattended_upgrades_auto_reboot_time: "02:00"
+
+# Remote syslog forwarding (empty host = disabled)
+remote_syslog_host: ""
+remote_syslog_port: 514
+remote_syslog_protocol: "tcp"   # "tcp" or "udp"
+remote_syslog_facilities: "auth.*;authpriv.*;kern.*"

@@ -254,6 +254,45 @@
   delay: 5
   tags: [audit]
 
+# Log forwarding
+
+- name: Install rsyslog
+  ansible.builtin.apt:
+    name: rsyslog
+    state: present
+  register: security_rsyslog_install
+  until: security_rsyslog_install is succeeded
+  retries: 3
+  delay: 5
+  tags: [syslog]
+
+- name: Configure remote syslog forwarding
+  ansible.builtin.template:
+    src: rsyslog-remote.conf.j2
+    dest: /etc/rsyslog.d/50-remote.conf
+    owner: root
+    group: root
+    mode: '0644'
+    backup: true
+  when: remote_syslog_host | length > 0
+  notify: Restart rsyslog
+  tags: [syslog]
+
+- name: Remove remote syslog forwarding config when disabled
+  ansible.builtin.file:
+    path: /etc/rsyslog.d/50-remote.conf
+    state: absent
+  when: remote_syslog_host | length == 0
+  notify: Restart rsyslog
+  tags: [syslog]
+
+- name: Enable rsyslog service
+  ansible.builtin.systemd:
+    name: rsyslog
+    state: started
+    enabled: true
+  tags: [syslog]
+
 # Reboot check
 
 - name: Check if reboot is required

@@ -8,3 +8,8 @@
   ansible.builtin.systemd:
     name: fail2ban
     state: restarted
+
+- name: Restart rsyslog
+  ansible.builtin.systemd:
+    name: rsyslog
+    state: restarted

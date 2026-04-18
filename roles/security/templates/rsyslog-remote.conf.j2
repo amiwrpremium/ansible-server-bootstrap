@@ -1,0 +1,6 @@
+# Managed by Ansible — remote syslog forwarding
+{% if remote_syslog_protocol == 'tcp' %}
+{{ remote_syslog_facilities }} @@{{ remote_syslog_host }}:{{ remote_syslog_port }}
+{% else %}
+{{ remote_syslog_facilities }} @{{ remote_syslog_host }}:{{ remote_syslog_port }}
+{% endif %}
