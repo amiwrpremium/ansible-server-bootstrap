@@ -161,6 +161,7 @@
     regexp: '^/swapfile'
     line: '/swapfile none swap sw 0 0'
     state: present
+    backup: true
 
 - name: Set swappiness
   ansible.posix.sysctl:

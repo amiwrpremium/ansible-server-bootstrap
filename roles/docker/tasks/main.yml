@@ -77,4 +77,5 @@
         "live-restore": true
       }
     mode: '0644'
+    backup: true
   notify: Restart Docker
