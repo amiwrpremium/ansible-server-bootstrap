@@ -26,6 +26,12 @@ ufw_allow_ports: []
 # ufw_allow_ports:
 #   - { port: 80, proto: tcp }
 #   - { port: 443, proto: tcp }
+# Trusted source IPs/CIDRs allowed to reach SSH without rate limiting (e.g. your
+# control machine or office). Empty = only the rate-limited rule applies.
+ufw_ssh_allow_from: []
+# ufw_ssh_allow_from:
+#   - "203.0.113.10"
+#   - "198.51.100.0/24"
 fail2ban_bantime: 3600
 fail2ban_findtime: 600
 fail2ban_maxretry: 3

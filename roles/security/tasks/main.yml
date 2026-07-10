@@ -66,6 +66,17 @@
     policy: allow
   tags: [firewall]
 
+# Trusted sources are allowed before the rate-limit rule so repeated connections
+# (e.g. an Ansible control machine) are not throttled by "ufw limit".
+- name: Allow SSH from trusted source IPs
+  community.general.ufw:
+    rule: allow
+    port: "{{ ssh_port }}"
+    proto: tcp
+    from_ip: "{{ item }}"
+  loop: "{{ ufw_ssh_allow_from }}"
+  tags: [firewall]
+
 - name: Rate limit SSH on custom port
   community.general.ufw:
     rule: limit
