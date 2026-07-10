@@ -440,6 +440,7 @@ All variables are in `group_vars/all.yml`. Every variable has a sensible default
 | `ssh_max_auth_tries` | `3` | Max SSH authentication attempts |
 | `ssh_allow_groups` | `["sudo", "root"]` | Groups allowed to SSH in. Empty list disables the restriction. |
 | `ufw_allow_ports` | `[]` | Additional UFW allow rules. List of `{port, proto}` dicts; `proto` defaults to `tcp`. |
+| `ufw_ssh_allow_from` | `[]` | Trusted source IPs/CIDRs allowed to reach SSH without rate limiting (e.g. control machine, office). Bypasses the `ufw limit` rule. |
 | `fail2ban_bantime` | `3600` | Ban duration in seconds (1 hour) |
 | `fail2ban_findtime` | `600` | Time window for counting failures (10 min) |
 | `fail2ban_maxretry` | `3` | Max failures before ban |
