@@ -842,6 +842,28 @@ make dry-run
 
 This runs the playbook in check mode with diff output, showing what would change without actually changing anything.
 
+### "A worker was found in a dead state" (control machine on Python 3.14 / macOS)
+
+On some newer control-machine setups — notably **macOS with Python 3.14** — Ansible's default OpenSSH connection plugin can crash its worker processes with `A worker was found in a dead state`. A reliable workaround is to switch the control machine to the `paramiko` transport:
+
+```bash
+export ANSIBLE_TRANSPORT=paramiko
+export ANSIBLE_FORKS=1
+```
+
+Add those to your shell profile, or drop them in a gitignored `Makefile.local` (see the `-include Makefile.local` hook in the `Makefile`) so `make` picks them up automatically. This is a control-machine issue, not a server one; revert once `ansible-core` resolves the Python 3.14 incompatibility.
+
+### "Error reading SSH protocol banner" / dropped connections on repeated runs
+
+SSH on the configured port is rate-limited with `ufw limit` (6 connections / 30s per source). When you run the playbook **repeatedly from the same control machine**, or on a flaky link that reconnects often, you can trip that limit and see `Error reading SSH protocol banner` or `UNREACHABLE`. Whitelist your control machine's IP so it bypasses the rate limiter — set `ufw_ssh_allow_from` in `group_vars/all.yml`:
+
+```yaml
+ufw_ssh_allow_from:
+  - "203.0.113.10"      # your control machine / office IP
+```
+
+That inserts an `allow` rule ahead of the `limit` rule, so trusted sources are never throttled.
+
 ## Lockout Recovery
 
 If you can't SSH in after a playbook run, you're not stuck — your VPS provider's web console gives you root access even when sshd is broken. Walk through this in order.
