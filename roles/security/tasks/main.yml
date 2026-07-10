@@ -244,6 +244,21 @@
     line: "$nrconf{restart} = 'a';"
   tags: [updates]
 
+# Keep needrestart's automatic mode from bouncing SSH during package upgrades,
+# which would drop the live admin/Ansible connection mid-run.
+- name: Exclude SSH from needrestart automatic restarts
+  ansible.builtin.copy:
+    dest: /etc/needrestart/conf.d/no-ssh-restart.conf
+    content: |
+      # Managed by ansible-server-bootstrap: never auto-restart SSH.
+      $nrconf{override_rc} = {
+          qr(^ssh(d)?\.service$) => 0,
+      };
+    owner: root
+    group: root
+    mode: '0644'
+  tags: [updates]
+
 - name: Lock root password
   ansible.builtin.user:
     name: root
