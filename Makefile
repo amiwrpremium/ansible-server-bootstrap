@@ -1,3 +1,7 @@
+# Optional machine-specific overrides (gitignored). Use it to set env vars like
+# ANSIBLE_TRANSPORT / ANSIBLE_FORKS for local workarounds without touching the repo.
+-include Makefile.local
+
 .PHONY: install bootstrap run check syntax ping dry-run lint create-user base security docker tools monitoring changelog audit healthcheck rollback
 
 install:
