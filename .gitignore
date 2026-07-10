@@ -22,3 +22,6 @@ vault.yml
 inventory/hosts.yml
 group_vars/*.yml
 !group_vars/example.*.yml
+
+# Machine-specific Make overrides (env vars for local workarounds)
+Makefile.local
