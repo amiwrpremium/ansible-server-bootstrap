@@ -21,6 +21,11 @@ ssh_allow_groups:
   - sudo
   - root
 
+# OS/SSH hardening is delegated to the devsec.hardening collection. Uncomment to override:
+# ssh_permit_root_login: "prohibit-password"  # default; DON'T set "no" while connecting as root
+# os_auditd_enabled: true                      # dev-sec installs & configures auditd
+# os_pam_enabled: true                         # dev-sec configures PAM pwquality
+
 # Additional UFW allow rules (beyond SSH which is rate-limited separately)
 ufw_allow_ports: []
 # ufw_allow_ports:

@@ -18,16 +18,25 @@
     key: "{{ ssh_public_keys | join('\n') }}"
   tags: [ssh]
 
-- name: Configure SSH daemon
-  ansible.builtin.template:
-    src: sshd_config.j2
-    dest: /etc/ssh/sshd_config
-    owner: root
-    group: root
-    mode: '0600'
-    validate: '/usr/sbin/sshd -t -f %s'
-    backup: true
-  notify: Restart SSH
+# dev-sec's ssh_hardening expects a space-separated AllowGroups string, but our
+# public var is a list. Convert here (a self-referencing include var would recurse).
+- name: Build AllowGroups string for ssh_hardening
+  ansible.builtin.set_fact:
+    security_ssh_allow_groups_str: "{{ ssh_allow_groups | join(' ') }}"
+  tags: [ssh]
+
+# Delegate sshd hardening (ciphers/MACs/KEX, auth policy, sshd_config) to dev-sec.
+# The role notifies its own restart handler, which our end-of-role flush_handlers
+# applies on the new port; "Verify SSH is reachable" then confirms it.
+- name: Harden SSH daemon (dev-sec)
+  ansible.builtin.include_role:
+    name: devsec.hardening.ssh_hardening
+  vars:
+    ssh_server_ports: ["{{ ssh_port }}"]
+    ssh_permit_root_login: "{{ ssh_permit_root_login | default('prohibit-password') }}"
+    ssh_server_password_login: false
+    ssh_allow_groups: "{{ security_ssh_allow_groups_str }}"
+    ssh_max_auth_retries: "{{ ssh_max_auth_tries }}"
   tags: [ssh]
 
 - name: Create SSH banner
@@ -128,48 +137,9 @@
   tags: [fail2ban]
 
 # Kernel hardening
-
-- name: Check whether IPv6 is available
-  ansible.builtin.stat:
-    path: /proc/sys/net/ipv6
-  register: security_ipv6
-  tags: [kernel]
-
-- name: Apply kernel security parameters
-  ansible.posix.sysctl:
-    name: "{{ item.name }}"
-    value: "{{ item.value }}"
-    state: present
-    sysctl_file: /etc/sysctl.d/99-security.conf
-    reload: true
-  loop:
-    - { name: 'net.ipv4.ip_forward', value: '1' }
-    - { name: 'net.ipv6.conf.all.forwarding', value: '0' }
-    - { name: 'net.ipv4.conf.all.accept_source_route', value: '0' }
-    - { name: 'net.ipv4.conf.default.accept_source_route', value: '0' }
-    - { name: 'net.ipv6.conf.all.accept_source_route', value: '0' }
-    - { name: 'net.ipv6.conf.default.accept_source_route', value: '0' }
-    - { name: 'net.ipv4.conf.all.accept_redirects', value: '0' }
-    - { name: 'net.ipv4.conf.default.accept_redirects', value: '0' }
-    - { name: 'net.ipv6.conf.all.accept_redirects', value: '0' }
-    - { name: 'net.ipv6.conf.default.accept_redirects', value: '0' }
-    - { name: 'net.ipv4.conf.all.send_redirects', value: '0' }
-    - { name: 'net.ipv4.conf.default.send_redirects', value: '0' }
-    - { name: 'net.ipv4.tcp_syncookies', value: '1' }
-    - { name: 'net.ipv4.conf.all.log_martians', value: '1' }
-    - { name: 'net.ipv4.conf.default.log_martians', value: '1' }
-    - { name: 'net.ipv4.icmp_echo_ignore_broadcasts', value: '1' }
-    - { name: 'net.ipv4.icmp_ignore_bogus_error_responses', value: '1' }
-    - { name: 'net.ipv4.conf.all.rp_filter', value: '1' }
-    - { name: 'net.ipv4.conf.default.rp_filter', value: '1' }
-    - { name: 'fs.suid_dumpable', value: '0' }
-    - { name: 'kernel.randomize_va_space', value: '2' }
-    - { name: 'kernel.dmesg_restrict', value: '1' }
-    - { name: 'kernel.kptr_restrict', value: '2' }
-    - { name: 'fs.protected_hardlinks', value: '1' }
-    - { name: 'fs.protected_symlinks', value: '1' }
-  when: "'ipv6' not in item.name or security_ipv6.stat.exists"
-  tags: [kernel]
+# The sysctl network/kernel params, /dev/shm mount, and module blacklist are
+# delegated to dev-sec's os_hardening role (see "Harden the OS" below). BBR is
+# kept here because os_hardening does not manage congestion control.
 
 - name: Ensure the tcp_bbr module is available
   community.general.modprobe:
@@ -197,30 +167,27 @@
   when: "'bbr' in (security_tcp_cc.content | b64decode)"
   tags: [kernel]
 
-- name: Harden /dev/shm
-  ansible.posix.mount:
-    path: /dev/shm
-    src: tmpfs
-    fstype: tmpfs
-    opts: defaults,noexec,nosuid,nodev
-    state: mounted
-  tags: [kernel]
-
-- name: Blacklist unused kernel modules
-  ansible.builtin.copy:
-    dest: /etc/modprobe.d/blacklist-unused.conf
-    content: |
-      blacklist cramfs
-      blacklist freevxfs
-      blacklist jffs2
-      blacklist hfs
-      blacklist hfsplus
-      blacklist udf
-      blacklist dccp
-      blacklist sctp
-      blacklist rds
-      blacklist tipc
-    mode: '0644'
+# Delegate OS hardening (network/kernel sysctls, /dev/shm, module blacklist,
+# login.defs, PAM/pwquality, auditd, umask/suid) to dev-sec. sysctl_overwrite
+# re-asserts IP forwarding for Docker; os_unused_filesystems keeps vfat/squashfs
+# OFF the blacklist so UEFI hosts (/boot/efi is vfat) still boot.
+- name: Harden the OS (dev-sec)
+  ansible.builtin.include_role:
+    name: devsec.hardening.os_hardening
+  vars:
+    sysctl_overwrite:
+      net.ipv4.ip_forward: 1
+    os_unused_filesystems:
+      - cramfs
+      - freevxfs
+      - jffs2
+      - hfs
+      - hfsplus
+      - udf
+      - dccp
+      - sctp
+      - rds
+      - tipc
   tags: [kernel]
 
 # Unattended upgrades

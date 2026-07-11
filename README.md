@@ -44,7 +44,7 @@ This software is provided "as is", without warranty of any kind. Use at your own
 
 This playbook hardens an Ubuntu 24.04+ VPS against common, opportunistic attack vectors. Know what it does and doesn't cover before you rely on it.
 
-It operates on a key-only access model — user accounts are password-locked, sudo is NOPASSWD, and no password is ever checked for SSH or privilege escalation. PAM password policies are therefore not configured; if you add password-based access later, reconsider the threat posture and enable PAM pwquality yourself.
+It operates on a key-only access model — user accounts are password-locked, sudo is NOPASSWD, and no password is ever checked for SSH or privilege escalation. SSH and OS hardening are delegated to the [dev-sec hardening collection](https://github.com/dev-sec/ansible-collection-hardening), which also configures PAM `pwquality` and installs `auditd`; since access is key-only, the password policies are a safety net rather than a primary control.
 
 **It helps against:**
 
@@ -93,7 +93,9 @@ It operates on a key-only access model — user accounts are password-locked, su
 
 ### Security (`roles/security`)
 
-- **SSH hardening**:
+> **SSH and OS hardening are delegated to the [dev-sec hardening collection](https://github.com/dev-sec/ansible-collection-hardening)** (`ssh_hardening` + `os_hardening`) — battle-tested, CIS-informed, and maintained upstream. This adds **PAM `pwquality`** and **`auditd`** on top of what the role used to do. The role keeps ownership of everything below the SSH/kernel lines (UFW, fail2ban, BBR, unattended-upgrades, needrestart, Lynis, remote syslog) and the anti-lockout sequencing.
+
+- **SSH hardening** (via dev-sec `ssh_hardening`):
   - Moves SSH to port 2222 (configurable)
   - Key-only authentication, password auth disabled
   - Modern ciphers only: `curve25519-sha256`, `chacha20-poly1305`, `aes256-gcm`
@@ -111,7 +113,7 @@ It operates on a key-only access model — user accounts are password-locked, su
   - SSH jail enabled with configurable ban time (default: 1 hour), find time (10 min), and max retries (3)
   - Recidive jail enabled by default: escalates to a 1-week ban after 5 bans within 24 hours
   - Uses UFW as the ban action
-- **Kernel hardening** (25 sysctl parameters):
+- **Kernel & OS hardening** (via dev-sec `os_hardening`: sysctls, `/dev/shm`, module blacklist, `login.defs`, PAM `pwquality`, `auditd`, umask/SUID):
   - IP forwarding enabled (required for Docker)
   - Disables source routing, ICMP redirects, send redirects
   - Enables SYN cookies, martian logging, broadcast ICMP ignore
