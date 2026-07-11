@@ -10,22 +10,8 @@
     security_ssh_allow_groups_str: "{{ ssh_allow_groups | join(' ') }}"
   tags: [ssh]
 
-# Delegate sshd hardening (ciphers/MACs/KEX, auth policy, sshd_config) to dev-sec.
-# The role notifies its own restart handler, which our end-of-role flush_handlers
-# applies on the new port; "Verify SSH is reachable" then confirms it.
-- name: Harden SSH daemon (dev-sec)
-  ansible.builtin.include_role:
-    name: devsec.hardening.ssh_hardening
-  vars:
-    ssh_server_ports: ["{{ ssh_port }}"]
-    ssh_permit_root_login: "{{ ssh_permit_root_login | default('no') }}"
-    ssh_server_password_login: false
-    ssh_allow_groups: "{{ security_ssh_allow_groups_str }}"
-    ssh_max_auth_retries: "{{ ssh_max_auth_tries }}"
-    ssh_banner: true
-    ssh_banner_path: /etc/ssh/banner
-  tags: [ssh]
-
+# Create the banner BEFORE dev-sec runs — dev-sec points sshd's Banner directive
+# at this file, and sshd rejects connections if the banner path is missing.
 - name: Create SSH banner
   ansible.builtin.copy:
     dest: /etc/ssh/banner
@@ -36,6 +22,22 @@
     owner: root
     group: root
     mode: '0644'
+  tags: [ssh]
+
+# Delegate sshd hardening (ciphers/MACs/KEX, auth policy, sshd_config) to dev-sec.
+# The role notifies its own restart handler, which our end-of-role flush_handlers
+# applies on the new port; "Verify SSH is reachable" then confirms it.
+- name: Harden SSH daemon (dev-sec)
+  ansible.builtin.include_role:
+    name: devsec.hardening.ssh_hardening
+  vars:
+    ssh_server_ports: ["{{ ssh_port }}"]
+    ssh_permit_root_login: "{{ security_permit_root_login | default('no') }}"
+    ssh_server_password_login: false
+    ssh_allow_groups: "{{ security_ssh_allow_groups_str }}"
+    ssh_max_auth_retries: "{{ ssh_max_auth_tries }}"
+    ssh_banner: true
+    ssh_banner_path: /etc/ssh/banner
   tags: [ssh]
 
 # UFW
