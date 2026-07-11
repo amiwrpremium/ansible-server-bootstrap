@@ -98,11 +98,11 @@ It operates on a key-only access model — user accounts are password-locked, su
 - **SSH hardening** (via dev-sec `ssh_hardening`):
   - Moves SSH to port 2222 (configurable)
   - Key-only authentication, password auth disabled
-  - Modern ciphers only: `curve25519-sha256`, `chacha20-poly1305`, `aes256-gcm`
+  - Modern ciphers, MACs, and key-exchange algorithms (dev-sec's regularly-updated allow-list)
   - Disables agent forwarding, TCP forwarding, X11 forwarding, tunneling
-  - Login grace time: 30 seconds, max 3 auth tries
-  - Client alive interval: 300 seconds, max 2 missed keepalives
-  - Adds an unauthorized access warning banner
+  - Login grace time: 30 seconds; max auth tries via `ssh_max_auth_tries` (default 3)
+  - Client alive interval: 300 seconds (idle sessions dropped)
+  - Serves an unauthorized-access warning banner
   - Locks the root password (key-only access)
   - Restricts SSH login to members of `sudo` or `root` groups via `AllowGroups`
 - **UFW firewall**:
@@ -189,7 +189,7 @@ cd ansible-server-bootstrap
 make install
 ```
 
-This installs `ansible.posix` and `community.general` from Ansible Galaxy.
+This installs `ansible.posix`, `community.general`, and `devsec.hardening` from Ansible Galaxy.
 
 ### Step 3: Copy the example config files
 
@@ -751,9 +751,10 @@ UFW rules added via `ufw_allow_ports` stay in place if you remove them from the 
     │   ├── tasks/main.yml      # SSH, UFW, fail2ban, kernel, BBR, upgrades
     │   ├── handlers/main.yml   # Restart SSH, restart fail2ban
     │   └── templates/
-    │       ├── sshd_config.j2          # SSH daemon configuration
-    │       ├── jail.local.j2           # Fail2ban jail configuration
-    │       └── 50unattended-upgrades.j2 # Unattended upgrades configuration
+    │       ├── jail.local.j2            # Fail2ban jail configuration
+    │       ├── 50unattended-upgrades.j2 # Unattended upgrades configuration
+    │       ├── lynis-custom.prf.j2      # Lynis audit profile
+    │       └── rsyslog-remote.conf.j2   # Remote syslog forwarding
     ├── docker/
     │   ├── tasks/main.yml      # Docker CE installation and configuration
     │   └── handlers/main.yml   # Restart Docker

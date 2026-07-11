@@ -93,7 +93,7 @@ feat!: drop Ubuntu 22.04 support
 
 ## Code Style
 
-- Use `ansible.builtin.*` and `community.general.*` fully qualified module names.
+- Use fully qualified names: `ansible.builtin.*`, `ansible.posix.*`, `community.general.*` modules, and the `devsec.hardening.*` roles.
 - Use `'0644'` style for file modes (quoted, with leading zero).
 - Use `true`/`false` for booleans, not `yes`/`no`.
 - Use 2-space indentation in YAML.
