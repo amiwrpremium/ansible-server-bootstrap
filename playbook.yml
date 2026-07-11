@@ -35,9 +35,18 @@
         msg: "ansible_host is not configured. Set the server IP in inventory/hosts.yml"
       when: ansible_host == 'CHANGE_ME' or ansible_host | length == 0
 
+    - name: Validate admin_user is configured
+      ansible.builtin.fail:
+        msg: "admin_user must be set to a non-root username (the account you log in as after bootstrap). Got: '{{ admin_user | default('') }}'"
+      when: admin_user | default('') | length == 0 or admin_user == 'root'
+
+  # admin_user runs first so the non-root login exists before security locks SSH
+  # down; security runs last so the port change + root-login disable happen only
+  # after every other role has completed on the initial connection.
   roles:
+    - { role: admin_user, tags: ['admin_user'] }
     - { role: base, tags: ['base'] }
-    - { role: security, tags: ['security'] }
     - { role: docker, tags: ['docker'] }
     - { role: tools, tags: ['tools'] }
     - { role: monitoring, tags: ['monitoring'] }
+    - { role: security, tags: ['security'] }

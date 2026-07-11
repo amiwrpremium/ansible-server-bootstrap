@@ -3,7 +3,12 @@
 ssh_port: 2222
 ssh_public_keys:
   - "CHANGE_ME"
-# ssh_authorized_keys_exclusive: true  # default; set false to keep ad-hoc keys in root's authorized_keys
+# ssh_authorized_keys_exclusive: true  # default; set false to keep ad-hoc keys in the admin user's authorized_keys
+
+# Admin user — the non-root sudo account you log in as after bootstrap.
+# Created (or adopted) at bootstrap; root SSH is then disabled entirely.
+admin_user: ubuntu
+admin_user_shell: /bin/bash
 
 # System
 hostname: "server"
