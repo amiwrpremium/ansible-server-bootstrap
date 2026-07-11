@@ -37,6 +37,8 @@
     ssh_server_password_login: false
     ssh_allow_groups: "{{ security_ssh_allow_groups_str }}"
     ssh_max_auth_retries: "{{ ssh_max_auth_tries }}"
+    ssh_banner: true
+    ssh_banner_path: /etc/ssh/banner
   tags: [ssh]
 
 - name: Create SSH banner
