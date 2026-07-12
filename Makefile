@@ -15,7 +15,7 @@ install:
 	ansible-galaxy collection install -r requirements.yml
 
 bootstrap:
-	ansible-playbook playbook.yml --ask-pass $(BECOME) -e ansible_user=$(BOOTSTRAP_USER) -e ansible_port=22 -e ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+	ansible-playbook playbook.yml --ask-pass $(BECOME) -e ansible_user=$(BOOTSTRAP_USER) -e ansible_port=22
 
 run:
 	ansible-playbook playbook.yml
