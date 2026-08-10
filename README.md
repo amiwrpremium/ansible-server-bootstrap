@@ -58,7 +58,7 @@ It operates on a key-only access model — user accounts are password-locked, su
 **It does not protect against:**
 
 - Targeted attacks by a capable adversary
-- Insider threats — anyone in `ssh_public_keys` has full root
+- Insider threats — anyone in `ssh_public_keys` has full root (via the admin user's passwordless sudo)
 - Physical access to the server (console, disk extraction, cold boot)
 - Supply-chain compromise (malicious Ansible collection, apt repo, or GitHub Action pinned here)
 - Zero-day exploits in installed services (SSH, Docker, node_exporter, etc.)
@@ -103,8 +103,8 @@ It operates on a key-only access model — user accounts are password-locked, su
   - Login grace time: 30 seconds; max auth tries via `ssh_max_auth_tries` (default 3)
   - Client alive interval: 300 seconds (idle sessions dropped)
   - Serves an unauthorized-access warning banner
-  - Locks the root password (key-only access)
-  - Restricts SSH login to members of `sudo` or `root` groups via `AllowGroups`
+  - **Disables root SSH entirely** (`PermitRootLogin no`) — you log in as the non-root `admin_user`; the root password is also locked (break-glass via the provider console)
+  - Restricts SSH login to the `sudo` group (where the admin user lives) via `AllowGroups`
 - **UFW firewall**:
   - Default deny incoming, allow outgoing
   - Rate-limited SSH on the configured port (complements fail2ban)
@@ -155,7 +155,7 @@ It operates on a key-only access model — user accounts are password-locked, su
 
 ## Prerequisites
 
-- A fresh Ubuntu 24.04+ VPS with root SSH access
+- A fresh Ubuntu 24.04+ VPS with initial SSH access (root or a sudo user — whatever your provider gives)
 - Ansible installed on your local machine
 - An SSH key pair (ed25519 recommended)
 
@@ -209,7 +209,7 @@ all:
   hosts:
     vps:
       ansible_host: "203.0.113.50"    # <-- your server IP
-      ansible_user: root
+      ansible_user: ubuntu
       ansible_ssh_private_key_file: ~/.ssh/id_ed25519
       ansible_port: 2222
 ```
@@ -258,15 +258,21 @@ The first time you run the playbook, your server is still on the default SSH por
 make bootstrap
 ```
 
-This runs the playbook with `--ask-pass` on port 22. It will:
+This connects as the provider's initial user (root by default) with `--ask-pass` on port 22. It will:
 
-- Prompt you for the root password
-- Configure everything including changing SSH to port 2222
-- After this, password auth is disabled and SSH moves to port 2222
+- Prompt you for the initial user's password
+- Create (or adopt) the non-root `admin_user` (default `ubuntu`) with your key + passwordless sudo
+- Configure everything, move SSH to port 2222, disable password auth, and **disable root SSH**
+
+If your provider's initial user is **not** root (e.g. a sudo `ubuntu`), run instead:
+
+```bash
+make bootstrap BOOTSTRAP_USER=ubuntu BECOME='--ask-become-pass'
+```
 
 ### Step 8: Subsequent runs
 
-For all future runs (the server is now on port 2222 with key auth):
+For all future runs (the server is now on port 2222, key auth, as `admin_user`):
 
 ```bash
 make run
@@ -275,7 +281,7 @@ make run
 ### Step 9: Verify connectivity
 
 ```bash
-ssh -p 2222 root@YOUR_SERVER_IP
+ssh -p 2222 ubuntu@YOUR_SERVER_IP
 ```
 
 ## Post-Bootstrap Verification
@@ -295,7 +301,7 @@ All asserts should pass. If any fail, fix the flagged issue before relying on th
 From your workstation:
 
 ```bash
-ssh -p 2222 root@YOUR_SERVER_IP
+ssh -p 2222 ubuntu@YOUR_SERVER_IP
 ```
 
 Should log you in without prompting for a password.
@@ -303,7 +309,7 @@ Should log you in without prompting for a password.
 ### 3. Confirm password auth is actually disabled
 
 ```bash
-ssh -o PasswordAuthentication=yes -o PreferredAuthentications=password -p 2222 root@YOUR_SERVER_IP
+ssh -o PasswordAuthentication=yes -o PreferredAuthentications=password -p 2222 ubuntu@YOUR_SERVER_IP
 ```
 
 Should reject with `Permission denied (publickey)`. If it prompts for a password, `PasswordAuthentication no` didn't take — stop and fix before relying on the server.
@@ -345,6 +351,8 @@ make audit
 Lynis prints a Hardening index. Save the number — future runs let you trend it.
 
 ## Creating Additional Users
+
+The primary admin user (`admin_user`, default `ubuntu`) is created automatically during bootstrap. Use `create-user.yml` to add *more* sudo users later.
 
 The `create-user.yml` playbook creates a new sudo user with SSH key authentication and passwordless sudo.
 
@@ -431,8 +439,10 @@ All variables are in `group_vars/all.yml`. Every variable has a sensible default
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `ssh_port` | `2222` | SSH listen port |
-| `ssh_public_keys` | `["CHANGE_ME"]` | List of SSH public keys authorized for root (required, at least one) |
-| `ssh_authorized_keys_exclusive` | `true` | When `true`, any keys in root's `authorized_keys` not in `ssh_public_keys` are removed on each run. Set `false` to preserve ad-hoc keys. |
+| `admin_user` | `ubuntu` | Non-root sudo user you log in as after bootstrap (created or adopted; root SSH is then disabled) |
+| `admin_user_shell` | `/bin/bash` | Login shell for the admin user |
+| `ssh_public_keys` | `["CHANGE_ME"]` | List of SSH public keys authorized for the admin user (required, at least one) |
+| `ssh_authorized_keys_exclusive` | `true` | When `true`, any keys in the admin user's `authorized_keys` not in `ssh_public_keys` are removed on each run. Set `false` to preserve ad-hoc keys. |
 | `hostname` | `server` | Server hostname |
 | `timezone` | `UTC` | Server timezone |
 | `system_locale` | `en_US.UTF-8` | System locale |
@@ -552,7 +562,7 @@ Empty `remote_syslog_host` disables the feature; the playbook removes the config
 sudo nc -l 514
 
 # on the target — any sudo command or SSH login fires auth events
-ssh -p 2222 root@TARGET_IP 'true'
+ssh -p 2222 ubuntu@TARGET_IP 'true'
 ```
 
 **Limitations:**
@@ -620,7 +630,7 @@ Node exporter listens on `127.0.0.1:9100` by default (not exposed to the interne
 ### Via SSH tunnel
 
 ```bash
-ssh -L 9100:localhost:9100 -p 2222 root@YOUR_SERVER_IP
+ssh -L 9100:localhost:9100 -p 2222 ubuntu@YOUR_SERVER_IP
 ```
 
 Then open <http://localhost:9100/metrics> in your browser.
@@ -638,12 +648,12 @@ all:
   hosts:
     web-1:
       ansible_host: "203.0.113.50"
-      ansible_user: root
+      ansible_user: ubuntu
       ansible_ssh_private_key_file: ~/.ssh/id_ed25519
       ansible_port: 2222
     web-2:
       ansible_host: "203.0.113.51"
-      ansible_user: root
+      ansible_user: ubuntu
       ansible_ssh_private_key_file: ~/.ssh/id_ed25519
       ansible_port: 2222
 ```
@@ -669,14 +679,14 @@ all:
       hosts:
         web-1:
           ansible_host: "203.0.113.50"
-          ansible_user: root
+          ansible_user: ubuntu
           ansible_ssh_private_key_file: ~/.ssh/id_ed25519
           ansible_port: 2222
     db:
       hosts:
         db-1:
           ansible_host: "203.0.113.51"
-          ansible_user: root
+          ansible_user: ubuntu
           ansible_ssh_private_key_file: ~/.ssh/id_ed25519
           ansible_port: 2222
 ```
@@ -811,7 +821,7 @@ ansible_host: "203.0.113.50"
 After `make bootstrap`, SSH moves to port 2222 and password auth is disabled. Connect with:
 
 ```bash
-ssh -p 2222 root@YOUR_SERVER_IP
+ssh -p 2222 ubuntu@YOUR_SERVER_IP
 ```
 
 If you're locked out, see **Lockout Recovery** below for the full walkthrough.
@@ -821,7 +831,7 @@ If you're locked out, see **Lockout Recovery** below for the full walkthrough.
 The playbook detected `/var/run/reboot-required` on the server. This usually means a kernel update was installed. Reboot the server:
 
 ```bash
-ssh -p 2222 root@YOUR_SERVER_IP 'reboot'
+ssh -p 2222 ubuntu@YOUR_SERVER_IP 'sudo reboot'
 ```
 
 ### Playbook fails on a non-Ubuntu system
@@ -833,7 +843,7 @@ This playbook only supports Ubuntu 24.04 and later. It validates the OS version 
 If you change `ssh_port` after the first run (e.g., from `2222` to `2200`), the playbook adds the new rate-limit rule but does not remove the old one. Delete it manually:
 
 ```bash
-ssh -p <new_port> root@YOUR_SERVER_IP 'ufw delete limit <old_port>/tcp'
+ssh -p <new_port> ubuntu@YOUR_SERVER_IP 'sudo ufw delete limit <old_port>/tcp'
 ```
 
 ### Testing changes before applying
@@ -925,7 +935,7 @@ Repeat the same pattern for `/etc/fail2ban/jail.local`, `/etc/docker/daemon.json
 From your workstation:
 
 ```bash
-ssh -p 2222 root@YOUR_SERVER_IP
+ssh -p 2222 ubuntu@YOUR_SERVER_IP
 ```
 
 ### 6. Fix the source of truth before re-running

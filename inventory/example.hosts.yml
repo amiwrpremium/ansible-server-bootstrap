@@ -1,8 +1,11 @@
+# After bootstrap you connect as the non-root admin user (admin_user, default
+# `ubuntu`) on the hardened port with your key. The first run overrides these:
+# `make bootstrap` connects as the provider's initial user on port 22.
 all:
   hosts:
     vps:
       ansible_host: "CHANGE_ME"
-      ansible_user: root
+      ansible_user: ubuntu
       ansible_ssh_private_key_file: ~/.ssh/id_ed25519
       ansible_port: 2222
 
@@ -14,14 +17,14 @@ all:
 #       hosts:
 #         web-1:
 #           ansible_host: "203.0.113.50"
-#           ansible_user: root
+#           ansible_user: ubuntu
 #           ansible_ssh_private_key_file: ~/.ssh/id_ed25519
 #           ansible_port: 2222
 #     db:
 #       hosts:
 #         db-1:
 #           ansible_host: "203.0.113.51"
-#           ansible_user: root
+#           ansible_user: ubuntu
 #           ansible_ssh_private_key_file: ~/.ssh/id_ed25519
 #           ansible_port: 2222
 #
