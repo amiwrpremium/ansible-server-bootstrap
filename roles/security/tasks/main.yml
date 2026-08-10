@@ -40,6 +40,13 @@
     ssh_banner_path: /etc/ssh/banner
   tags: [ssh]
 
+# Apply the SSH restart NOW, not at end-of-role. dev-sec disables ssh.socket as
+# part of hardening; if we defer the restart and a *later* task fails, sshd is
+# left stopped and the box is locked out. Restarting here means sshd is listening
+# on the new port immediately, so any later failure stays recoverable on it.
+- name: Apply SSH hardening now (restart before later tasks can fail)
+  ansible.builtin.meta: flush_handlers
+
 # UFW
 
 - name: Install UFW
